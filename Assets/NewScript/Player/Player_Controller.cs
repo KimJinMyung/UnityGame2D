@@ -2,6 +2,8 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.Interactions;
+using UnityEngine.Pool;
 using static UnityEditor.Experimental.GraphView.GraphView;
 using static UnityEngine.GraphicsBuffer;
 
@@ -11,7 +13,10 @@ public enum PlayerState
     Move,
     Crouch,
     NormalAiming,
-    precisionAiming,
+    PickUping,
+    Equiped,
+    UnEquiped,
+    BackSlide,
     Die
 }
 
@@ -44,7 +49,17 @@ public class Player_Controller : MonoBehaviour
 
     private PlayerState state;
 
-    private void Awake()
+    private newInventory playerInventory;
+    private Gun playerGun;
+
+    private float Damage = 5;
+    private float AttackDamage;
+
+    //[SerializeField]
+    //private GameObject magazine;
+    private GameObject PickUpItemObject;
+
+    private void Start()
     {
         playerRigid = GetComponent<Rigidbody2D>();
         capsuleCollider = transform.GetChild(1).GetChild(0).GetComponent<CapsuleCollider2D>();
@@ -53,8 +68,10 @@ public class Player_Controller : MonoBehaviour
         LeftArmAimator = transform.GetChild(0).GetChild(0).GetChild(1).GetComponent<Animator>();
         ArmsTransform = transform.GetChild(0).GetChild(0).transform;
         state = PlayerState.Idle;
+        playerInventory = new newInventory();
+        playerGun = new Gun();        
     }
-
+        
     public void OnMove(InputAction.CallbackContext context)
     {        
         InputMoveDir = context.ReadValue<Vector2>();
@@ -119,6 +136,181 @@ public class Player_Controller : MonoBehaviour
         isLegAiming = context.ReadValue<float>() > 0f;
     }
 
+    public void OnAttack(InputAction.CallbackContext context)
+    {
+        if (state == PlayerState.PickUping || state == PlayerState.Die) return;
+        if (context.performed)
+        {
+            if (!playerGun.equipedBullet) return;
+            
+            if(target != null)
+            {
+                target.Hurt(AttackDamage);                
+            }
+            //bullet 감소
+            playerGun.BackSlide();
+        }
+    }
+
+    public void OnEquip(InputAction.CallbackContext context)
+    {
+        if(context.started)
+        {
+            state = PlayerState.Equiped;
+        }
+
+        if(context.performed)
+        {
+            if (playerInventory.grip == null) return;
+            if (playerGun.equipedMagazine != null) return;
+            playerGun.Equip(playerInventory.grip);
+            playerInventory.Equip();
+        }
+
+        if (context.canceled)
+        {
+            state = PlayerState.Idle;
+        }
+    }
+
+    public void OnUnEquip(InputAction.CallbackContext context)
+    {
+        if (context.started)
+        {
+            state = PlayerState.UnEquiped;
+        }
+
+        if (context.performed)
+        {
+            //손에 탄창이 있으면 해당 탄창을 내려 놓는다.
+            //그러나 총에 탄창이 있는 상황에서 손에 탄창이 있으면 총의 탄창을 분리하고 내려 놓는다.
+            //손에 탄창이 없으면 장착되어 있는 총의 탄창을 손에 쥔다.
+            //손, 총 모두 탄창이 없으면 실행되는 것이 없다.
+
+            if (playerInventory.grip != null)
+            {
+                if (playerGun.equipedMagazine != null)
+                {
+                    ObjectPoolManager.Instance.Drop(playerGun.equipedMagazine,this.gameObject);
+                    playerGun.UnEquip();
+                    Debug.Log("playerGun의 탄창 drop");
+                }
+                else
+                {
+                    ObjectPoolManager.Instance.Drop(playerInventory.grip, this.gameObject);
+                    playerInventory.Equip();
+                    Debug.Log("player grip의 탄창 drop");
+                }
+            }
+            else
+            {
+                if (playerGun.equipedMagazine == null) return;
+                playerInventory.UnEquip(playerGun.equipedMagazine);
+                playerGun.UnEquip();
+                Debug.Log("탄창 해제");
+            }
+        }
+
+        if(context.canceled)
+        {
+            state = PlayerState.Idle;
+        }
+    }
+
+    public void OnPickUp(InputAction.CallbackContext context)
+    {
+        //아래에 총탄이 있으면 3초동안 홀드하여 줍는다.
+        //없으면 잠시 멈춰 땅을 짚고 곧바로 일어선다.
+        //플레이어의 손에 총탄이 있으면 버린다.
+        if (context.started)
+        {
+            if (playerInventory.grip != null)
+            {
+                ObjectPoolManager.Instance.Drop(playerInventory.grip, this.gameObject);
+                playerInventory.Equip();
+                return;
+            }
+            state = PlayerState.PickUping;
+            bodyAnimator.SetBool("PickUp", true);
+        }
+
+        if (context.performed)
+        {
+            if(PickUpItemObject != null)
+            {
+                if(context.interaction is HoldInteraction)
+                {
+                    playerInventory.UnEquip(PickUpItemObject.GetComponent<Magazine>().bullet);
+                    PickUpItemObject.GetComponent<Magazine>().DestoryMagazine();
+                    Debug.Log("줍기 실행");
+                }
+                else if(context.interaction is PressInteraction)
+                {
+                    state = PlayerState.Idle;
+                    bodyAnimator.SetBool("PickUp", false);
+                    return;
+                }
+            }
+            else
+            {
+                state = PlayerState.Idle;
+                bodyAnimator.SetBool("PickUp", false);
+                return;
+            }
+        }
+
+        if (context.canceled)
+        {
+            state = PlayerState.Idle;
+            bodyAnimator.SetBool("PickUp", false);
+        }
+    }
+
+    public void OnBackSlide(InputAction.CallbackContext context)
+    {
+        if (context.started)
+        {
+            state = PlayerState.BackSlide;
+        }
+
+        if (context.performed)
+        {
+            if (playerInventory.grip != null || playerGun.equipedMagazine == null) return;
+            playerGun.BackSlide();
+            Debug.Log("BackSlide");
+            Debug.Log(playerGun.equipedMagazine.bulletCount);
+        }
+
+        if (context.canceled)
+        {
+            state = PlayerState.Idle;
+        }
+    }
+
+    //private void Drop(Item item)
+    //{
+    //    Vector2 dropPos = transform.position;
+    //    //GameObject newMagazine = Instantiate(magazine);
+    //    var newMagazine = _pool.Get();
+    //    newMagazine.GetComponent<Magazine>().SetMagazine(item, true);
+    //    newMagazine.transform.position = dropPos;
+    //}
+
+    private void AttackDamageDecide()
+    {
+        if (isHeadAiming)
+        {
+            AttackDamage = Damage * 3f;
+        }else if (isLegAiming)
+        {
+            AttackDamage = Damage * 0.5f;
+        }
+        else
+        {
+            AttackDamage = Damage;
+        }
+    }
+
     private void Crouch()
     {
         if(state != PlayerState.Crouch) 
@@ -174,7 +366,7 @@ public class Player_Controller : MonoBehaviour
 
     private void Move()
     {
-        if (state == PlayerState.Die || state == PlayerState.Crouch) return;
+        if (state == PlayerState.Die || state == PlayerState.Crouch || state == PlayerState.PickUping) return;
         if (InputMoveDir.x != 0 && playerRigid.velocity.x < MaxSpeed && playerRigid.velocity.x > -MaxSpeed)
         {
             playerRigid.AddForce(Vector2.right * InputMoveDir.x * MoveSpeed);
@@ -224,13 +416,30 @@ public class Player_Controller : MonoBehaviour
             target = null;
         }
     }
+   
 
     private void FixedUpdate()
     {
         Move();
         SpriteRotate();
         SpriteMove();
-        Aiming();       
+        Aiming();
+        AttackDamageDecide();
     }
 
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.CompareTag("Magazine"))
+        {
+            PickUpItemObject = collision.transform.parent.gameObject;
+        }
+    }
+
+    private void OnTriggerExit2D(Collider2D collision)
+    {
+        if (collision.CompareTag("Magazine"))
+        {
+            PickUpItemObject = null;
+        }
+    }
 }

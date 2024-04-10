@@ -35,9 +35,4 @@ public class Gun
     {
         return equipedBullet;
     }
-
-    public void Drop()
-    {
-
-    }
 }

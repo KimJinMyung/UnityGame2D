@@ -368,32 +368,32 @@ public class Player : MonoBehaviour
         }        
     }
 
-    public void OnAttack(InputAction.CallbackContext context)
-    {   
-        if (context.performed)
-        {
-            if (playerInventory.grip != null || playerGun.equipedMagazine == null || playerGun.equipedBullet == false) return;
-            Debug.Log("Attack!!");
+    //public void OnAttack(InputAction.CallbackContext context)
+    //{   
+    //    if (context.performed)
+    //    {
+    //        if (playerInventory.grip != null || playerGun.equipedMagazine == null || playerGun.equipedBullet == false) return;
+    //        Debug.Log("Attack!!");
 
-            AttackDamageDecide();
-            playerGun.BackSlide();
+    //        AttackDamageDecide();
+    //        playerGun.BackSlide();
             
-            if (target != null)
-            {
-                Debug.Log(target.gameObject);
-                target.HitParts();
-                target.GetComponent<Monster>().Hurt(AttackDamage);
-                Debug.Log(playerGun.equipedMagazine.bulletCount);
-            }
-            else
-            {
-                Debug.Log(playerGun.equipedMagazine.bulletCount);
-                return;
-            }
+    //        if (target != null)
+    //        {
+    //            Debug.Log(target.gameObject);
+    //            target.HitParts();
+    //            target.GetComponent<Monster>().Hurt(AttackDamage);
+    //            Debug.Log(playerGun.equipedMagazine.bulletCount);
+    //        }
+    //        else
+    //        {
+    //            Debug.Log(playerGun.equipedMagazine.bulletCount);
+    //            return;
+    //        }
 
             
-        }        
-    }
+    //    }        
+    //}
 
     private void AttackDamageDecide()
     {

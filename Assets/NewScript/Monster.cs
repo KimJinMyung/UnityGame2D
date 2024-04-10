@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Pool;
+using static UnityEditor.Progress;
 
 public class Monster : MonoBehaviour
 {
@@ -12,12 +14,15 @@ public class Monster : MonoBehaviour
     private SpriteRenderer[] Aiming;
     private bool isBleeding = false;
 
-    public GameObject dropMagazine;
+    [SerializeField]
+    private GameObject dropMagazine;
+    //private IObjectPool<Magazine> _pool;
 
     private void Awake()
     {
         aaa= GetComponent<Rigidbody2D>();
         Aiming = new SpriteRenderer[3];
+        //_pool = new ObjectPool<Magazine>(CreateMagazine, OnGetMagazine, OnReleaseMagazine, OnDestroyMagazine, maxSize: 7);
     }
 
     private void Start()
@@ -31,6 +36,9 @@ public class Monster : MonoBehaviour
 
     public void Hurt(float damage)
     {
+
+        HitParts();
+
         if (Parts == 2)
         {
             //if(rb == null) rb = GetComponent<Rigidbody2D>();
@@ -65,18 +73,10 @@ public class Monster : MonoBehaviour
         }
         OffTargeting();
         gameObject.layer = 7;
-        Drop();
-    }
-
-    private void Drop()
-    {
         Item item = new Item();
         item.bulletCount = Random.Range(0, 16);
-        Vector2 dropPos = transform.position;
-        GameObject newMagazine = Instantiate(dropMagazine);
-        newMagazine.GetComponent<Magazine>().SetMagazine(item, true);
-        newMagazine.transform.position = dropPos;
-    }
+        ObjectPoolManager.Instance.Drop(item, this.gameObject);       
+    }    
 
     private void OnTargeting(bool isHeadAiming, bool isLegAiming)
     {
@@ -100,7 +100,7 @@ public class Monster : MonoBehaviour
         }
     }
 
-    public void HitParts()
+    private void HitParts()
     {
         int line = 0;
         foreach (var i in Aiming)
@@ -145,4 +145,26 @@ public class Monster : MonoBehaviour
             Debug.Log("Bleeding...");
         }
     }
+
+    //private Magazine CreateMagazine()
+    //{
+    //    Magazine magazine = Instantiate(this.dropMagazine).GetComponent<Magazine>();
+    //    magazine.SetManagedPool(_pool);
+    //    return magazine;
+    //}
+
+    //private void OnGetMagazine(Magazine magazine)
+    //{
+    //    magazine.gameObject.SetActive(true);
+    //}
+
+    //private void OnReleaseMagazine(Magazine magazine)
+    //{
+    //    magazine.gameObject.SetActive(false);
+    //}
+
+    //private void OnDestroyMagazine(Magazine magazine)
+    //{
+    //    Destroy(magazine.gameObject);
+    //}
 }

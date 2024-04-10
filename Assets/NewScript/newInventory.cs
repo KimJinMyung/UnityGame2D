@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Interactions;
 
-public class newInventory : MonoBehaviour
+public class newInventory
 {
     public Item grip {  get; private set; }
     private Item[] Inven = new Item[4];
@@ -19,7 +19,6 @@ public class newInventory : MonoBehaviour
         if (Inven[2] != null) Debug.Log("Inven[2]에 아이템 있음");
         if (Inven[3] != null) Debug.Log("Inven[3]에 아이템 있음");
     }   
-   
 
     public void Equip()
     {
