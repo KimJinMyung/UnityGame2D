@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: f8fa5a90b0f2d1547b70dc97be1cce08
+guid: 1a366e5341824e740b01711115ad1365
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -93,7 +93,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: player shoot 2H 48x48_0
+      name: Player PickUp_LeftArm 48x48-Sheet_0
       rect:
         serializedVersion: 2
         x: 0
@@ -107,14 +107,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 10eef594670495c458d8cf49c3105484
-      internalID: 2124904526
+      spriteID: 967919eb56c1aca47ac46c1b8cdd86ba
+      internalID: 594947619
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: player shoot 2H 48x48_1
+      name: Player PickUp_LeftArm 48x48-Sheet_1
       rect:
         serializedVersion: 2
         x: 48
@@ -128,14 +128,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 127e90f4cd0ddd54f92c987538693c9d
-      internalID: -1686098119
+      spriteID: 85b60ed77526014449c372c790b80c31
+      internalID: 2095600258
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: player shoot 2H 48x48_2
+      name: Player PickUp_LeftArm 48x48-Sheet_2
       rect:
         serializedVersion: 2
         x: 96
@@ -149,14 +149,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 7b1ebd3e57418f24dbb8d56d5998c575
-      internalID: 877291338
+      spriteID: bde98ff1c3baed544b8e18a2589e2043
+      internalID: -889101870
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: player shoot 2H 48x48_3
+      name: Player PickUp_LeftArm 48x48-Sheet_3
       rect:
         serializedVersion: 2
         x: 144
@@ -170,14 +170,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 9901565509cc4964a8c57838d21b8ee1
-      internalID: -1282849870
+      spriteID: fb52ba3b747137542a24361854dbca16
+      internalID: 1777669835
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: player shoot 2H 48x48_4
+      name: Player PickUp_LeftArm 48x48-Sheet_4
       rect:
         serializedVersion: 2
         x: 192
@@ -191,14 +191,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 7722b9690d38ecc4293afb503e04badc
-      internalID: -627151030
+      spriteID: 019d8522984bae047b39513275d46119
+      internalID: -1704231587
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: player shoot 2H 48x48_5
+      name: Player PickUp_LeftArm 48x48-Sheet_5
       rect:
         serializedVersion: 2
         x: 240
@@ -212,14 +212,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 85694767f574ff945bae15cf40a9d893
-      internalID: -718553998
+      spriteID: 5560de7ec96397643b65aae827188d25
+      internalID: 1401775968
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: player shoot 2H 48x48_6
+      name: Player PickUp_LeftArm 48x48-Sheet_6
       rect:
         serializedVersion: 2
         x: 288
@@ -233,14 +233,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 56720765bda9f0742bdd546d481bec5d
-      internalID: 2000450564
+      spriteID: dfb7e39997fba2b4fa7571c6d9c3b822
+      internalID: -867229218
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: player shoot 2H 48x48_7
+      name: Player PickUp_LeftArm 48x48-Sheet_7
       rect:
         serializedVersion: 2
         x: 336
@@ -254,14 +254,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 77333cf9400261f468673574b411178d
-      internalID: -1421019062
+      spriteID: 873f4740274c091458005bc52938855c
+      internalID: -453618519
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: player shoot 2H 48x48_8
+      name: Player PickUp_LeftArm 48x48-Sheet_8
       rect:
         serializedVersion: 2
         x: 384
@@ -275,14 +275,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: a76f02f78b61ba54aa8216c927f21bbf
-      internalID: 1795940602
+      spriteID: f932ecf5dfe2b28498d981b086c6d477
+      internalID: 717934715
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: player shoot 2H 48x48_9
+      name: Player PickUp_LeftArm 48x48-Sheet_9
       rect:
         serializedVersion: 2
         x: 432
@@ -296,8 +296,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 66c2bf0d688c52e45bcdabcc4e84e583
-      internalID: 2128846973
+      spriteID: 2afcc40e7f6435d408d96768cac1a8bb
+      internalID: 1636636281
       vertices: []
       indices: 
       edges: []
@@ -313,16 +313,16 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      player shoot 2H 48x48_0: 2124904526
-      player shoot 2H 48x48_1: -1686098119
-      player shoot 2H 48x48_2: 877291338
-      player shoot 2H 48x48_3: -1282849870
-      player shoot 2H 48x48_4: -627151030
-      player shoot 2H 48x48_5: -718553998
-      player shoot 2H 48x48_6: 2000450564
-      player shoot 2H 48x48_7: -1421019062
-      player shoot 2H 48x48_8: 1795940602
-      player shoot 2H 48x48_9: 2128846973
+      Player PickUp_LeftArm 48x48-Sheet_0: 594947619
+      Player PickUp_LeftArm 48x48-Sheet_1: 2095600258
+      Player PickUp_LeftArm 48x48-Sheet_2: -889101870
+      Player PickUp_LeftArm 48x48-Sheet_3: 1777669835
+      Player PickUp_LeftArm 48x48-Sheet_4: -1704231587
+      Player PickUp_LeftArm 48x48-Sheet_5: 1401775968
+      Player PickUp_LeftArm 48x48-Sheet_6: -867229218
+      Player PickUp_LeftArm 48x48-Sheet_7: -453618519
+      Player PickUp_LeftArm 48x48-Sheet_8: 717934715
+      Player PickUp_LeftArm 48x48-Sheet_9: 1636636281
   spritePackingTag: 
   pSDRemoveMatte: 0
   pSDShowRemoveMatteOption: 0

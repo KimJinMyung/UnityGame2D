@@ -134,6 +134,8 @@ GameObject:
   - component: {fileID: 136145093}
   - component: {fileID: 136145095}
   - component: {fileID: 136145094}
+  - component: {fileID: 136145096}
+  - component: {fileID: 136145097}
   m_Layer: 9
   m_Name: Player_RightArm
   m_TagString: Player
@@ -218,7 +220,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 1
-  m_Sprite: {fileID: 1556685921, guid: 51c0b8df61d8eda4fb9d739b2dbd97c2, type: 3}
+  m_Sprite: {fileID: 684305100, guid: d27aa04a6d2b2f84d904d58ca774533c, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -229,6 +231,30 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &136145096
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 136145092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 62bd35c8912527c4c8ac075e7fb18bd5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!114 &136145097
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 136145092}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 05a2aead99eda6048830d9056d2cdc23, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &249452840
 GameObject:
   m_ObjectHideFlags: 0
@@ -421,6 +447,14 @@ PrefabInstance:
       propertyPath: m_TagString
       value: monster
       objectReference: {fileID: 0}
+    - target: {fileID: 5632455387011977254, guid: 32a65a5959c6d2541ad306ad10ab8762, type: 3}
+      propertyPath: Hp
+      value: 15
+      objectReference: {fileID: 0}
+    - target: {fileID: 5632455387011977254, guid: 32a65a5959c6d2541ad306ad10ab8762, type: 3}
+      propertyPath: dropMagazine
+      value: 
+      objectReference: {fileID: 3516253405552042143, guid: d9cec32e0fac3ce418927783cc8ca936, type: 3}
     - target: {fileID: 5632455387011977432, guid: 32a65a5959c6d2541ad306ad10ab8762, type: 3}
       propertyPath: m_RootOrder
       value: 4
@@ -515,6 +549,7 @@ GameObject:
   - component: {fileID: 1747778544}
   - component: {fileID: 1747778546}
   - component: {fileID: 1747778545}
+  - component: {fileID: 1747778547}
   m_Layer: 9
   m_Name: Player_Sprite
   m_TagString: Player
@@ -600,7 +635,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 76891804, guid: 850b85883525b034080c54aab098f72c, type: 3}
+  m_Sprite: {fileID: -1005767802, guid: d05dbacfe8da5fe47b8d55bf5c60487f, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -611,6 +646,18 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &1747778547
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1747778543}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68982c84ab039004ea47c8867d468583, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1858966992
 GameObject:
   m_ObjectHideFlags: 0
@@ -977,9 +1024,37 @@ MonoBehaviour:
     m_ActionId: bb3dd8ad-d326-413f-b422-aa8928422b01
     m_ActionName: Player/BackSlide[/Keyboard/t,/Keyboard/e]
   - m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1957945382}
+        m_TargetAssemblyTypeName: Player_Controller, Assembly-CSharp
+        m_MethodName: OnCheckedEquipedBullet
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
     m_ActionId: 4133df2e-fcfb-4538-a3c7-583bd3b38ddf
     m_ActionName: Player/CheckedEquipedBullet[/Keyboard/t]
+  - m_PersistentCalls:
+      m_Calls:
+      - m_Target: {fileID: 1957945382}
+        m_TargetAssemblyTypeName: Player_Controller, Assembly-CSharp
+        m_MethodName: OnTestPrint
+        m_Mode: 0
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+    m_ActionId: 2805ba54-e335-4764-9e3d-ae37585668e4
+    m_ActionName: Player/New action
   m_NeverAutoSwitchControlSchemes: 0
   m_DefaultControlScheme: 
   m_DefaultActionMap: Player
@@ -1034,6 +1109,7 @@ GameObject:
   - component: {fileID: 1992038817}
   - component: {fileID: 1992038819}
   - component: {fileID: 1992038818}
+  - component: {fileID: 1992038820}
   m_Layer: 9
   m_Name: Player_LeftArm
   m_TagString: Player
@@ -1118,7 +1194,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: -1
-  m_Sprite: {fileID: -842407748, guid: aca3312f1eb146e47a024e2583e02c5b, type: 3}
+  m_Sprite: {fileID: 1636636281, guid: 1a366e5341824e740b01711115ad1365, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -1129,6 +1205,18 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!114 &1992038820
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1992038816}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 05a2aead99eda6048830d9056d2cdc23, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &3516253406902477373
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1217,6 +1305,14 @@ PrefabInstance:
       propertyPath: m_TagString
       value: monster
       objectReference: {fileID: 0}
+    - target: {fileID: 5632455387011977254, guid: 32a65a5959c6d2541ad306ad10ab8762, type: 3}
+      propertyPath: Hp
+      value: 15
+      objectReference: {fileID: 0}
+    - target: {fileID: 5632455387011977254, guid: 32a65a5959c6d2541ad306ad10ab8762, type: 3}
+      propertyPath: dropMagazine
+      value: 
+      objectReference: {fileID: 3516253405552042143, guid: d9cec32e0fac3ce418927783cc8ca936, type: 3}
     - target: {fileID: 5632455387011977432, guid: 32a65a5959c6d2541ad306ad10ab8762, type: 3}
       propertyPath: m_RootOrder
       value: 1

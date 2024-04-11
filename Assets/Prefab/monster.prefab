@@ -102,7 +102,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 917dcac5b48592d4a81defe319f7f9a7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Hp: 5
+  Hp: 15
   isDead: 0
   Parts: 1
   dropMagazine: {fileID: 3516253405552042143, guid: d9cec32e0fac3ce418927783cc8ca936, type: 3}
