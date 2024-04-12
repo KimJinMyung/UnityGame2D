@@ -57,6 +57,9 @@ public class Player_Controller : MonoBehaviour
     private float Damage = 5;
     public float AttackDamage {  get; private set; }
 
+    public float condition {  get; private set; }
+    public float forcus { get; private set; }
+
     //[SerializeField]
     //private GameObject magazine;
     private GameObject PickUpItemObject;
@@ -71,7 +74,12 @@ public class Player_Controller : MonoBehaviour
         ArmsTransform = transform.GetChild(0).GetChild(0).transform;
         state = PlayerState.Idle;
         playerInventory = new newInventory();
-        playerGun = new Gun();        
+        playerGun = new Gun();
+
+        condition = 100;
+        forcus = 100;
+
+        GameManager.Instance.Init_Player_Grip();
     }
         
     public void OnMove(InputAction.CallbackContext context)
@@ -81,13 +89,14 @@ public class Player_Controller : MonoBehaviour
 
     public void OnCrouch(InputAction.CallbackContext context)
     {
-        if(context.performed)
+        if (bodyAnimator.GetBool("PickUp")) return;
+        if (context.performed)
         {
             Crouch();
         }
     }
 
-    public void OnLoock(InputAction.CallbackContext context)
+    public void OnLook(InputAction.CallbackContext context)
     {
         if (context.performed)
         {
@@ -210,12 +219,14 @@ public class Player_Controller : MonoBehaviour
         if(context.started)
         {
             state = PlayerState.Equiped;
+            
         }
 
         if(context.performed)
         {
             if (playerInventory.grip == null) return;
             if (playerGun.equipedMagazine != null) return;
+            GameManager.Instance.Drop_UI_Aimation();
             playerGun.Equip(playerInventory.grip);
             playerInventory.Equip();
             LeftArmAimator.SetBool("Equip", true);
@@ -250,13 +261,13 @@ public class Player_Controller : MonoBehaviour
                 {
                     ObjectPoolManager.Instance.Drop(playerGun.equipedMagazine,this.gameObject);
                     playerGun.UnEquip();
-                    Debug.Log("playerGun¿« ≈∫√¢ drop");
                 }
                 else
                 {
                     ObjectPoolManager.Instance.Drop(playerInventory.grip, this.gameObject);
                     playerInventory.Equip();
-                    Debug.Log("player grip¿« ≈∫√¢ drop");
+                    //GameManager.Instance.Print_Player_Grip_Ainimation();
+                    GameManager.Instance.Drop_UI_Aimation();
                 }
             }
             else
@@ -264,7 +275,7 @@ public class Player_Controller : MonoBehaviour
                 if (playerGun.equipedMagazine == null) return;
                 playerInventory.UnEquip(playerGun.equipedMagazine);
                 playerGun.UnEquip();
-                Debug.Log("≈∫√¢ «ÿ¡¶");
+                GameManager.Instance.Print_Player_Grip_Ainimation();
             }
         }
 
@@ -287,7 +298,6 @@ public class Player_Controller : MonoBehaviour
                 playerInventory.Equip();
                 return;
             }
-            Debug.Log("PickUp Ω««‡");
             playerRigid.velocity = Vector3.zero;
             state = PlayerState.PickUping;
             
@@ -302,10 +312,16 @@ public class Player_Controller : MonoBehaviour
                 {
                     playerInventory.UnEquip(PickUpItemObject.GetComponent<Magazine>().bullet);
                     PickUpItemObject.GetComponent<Magazine>().DestoryMagazine();
+
                     bodyAnimator.SetTrigger("PickUping");
-                    Debug.Log("¡›±‚ Ω««‡");
+                    GameManager.Instance.Print_Player_Grip_Ainimation();
 
                     state = PlayerState.Idle;
+                }else if(context.interaction is PressInteraction)
+                {
+                    state = PlayerState.Idle;
+                    bodyAnimator.SetBool("PickUp", false);
+                    return;
                 }
                 
             }
@@ -496,9 +512,23 @@ public class Player_Controller : MonoBehaviour
             target = null;
         }
     }
-
-    
    
+    private void PrintSlots()
+    {
+        if(playerInventory.grip != null)
+        //{
+        //    GameManager.Instance.Print_Player_Grip();
+        //}
+        //else
+        {
+            GameManager.Instance.Print_Player_Grip(playerInventory.grip);           
+        }
+    }
+
+    private void Print_Player_Status()
+    {
+        GameManager.Instance.Print_Player_Status();
+    }
 
     private void FixedUpdate()
     {
@@ -509,7 +539,8 @@ public class Player_Controller : MonoBehaviour
         AttackDamageDecide();
         PickUpAimation();
 
-        playerInventory.InventoryPrint();
+        Print_Player_Status();
+        PrintSlots();
     }
 
     private void OnTriggerEnter2D(Collider2D collision)

@@ -110,8 +110,6 @@ public class Monster : MonoBehaviour
             }
             line++;
         }
-
-        Debug.Log(Parts);
     }
 
     private void OffTargeting()

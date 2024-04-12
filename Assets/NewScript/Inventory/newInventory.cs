@@ -14,6 +14,7 @@ public class newInventory
     public void Equip()
     {
         grip = null;
+        GameManager.Instance.Drop_UI_Aimation();
     }
 
     public void UnEquip(Item item)
@@ -32,14 +33,5 @@ public class newInventory
             Inven[slotIndex-1] = grip;
             grip = null;
         }
-    }
-
-    public void InventoryPrint()
-    {
-        if (grip != null) Debug.Log("grip에 아이템 있음");
-        if (Inven[0] != null) Debug.Log("Inven[0]에 아이템 있음");
-        if (Inven[1] != null) Debug.Log("Inven[1]에 아이템 있음");
-        if (Inven[2] != null) Debug.Log("Inven[2]에 아이템 있음");
-        if (Inven[3] != null) Debug.Log("Inven[3]에 아이템 있음");
     }
 }

@@ -20,7 +20,7 @@ public class Gun
 
     public void BackSlide()
     {
-        if(this.equipedMagazine.bulletCount <=0 )
+        if(this.equipedMagazine == null || this.equipedMagazine.bulletCount <=0)
         {
             equipedBullet = false;
         }

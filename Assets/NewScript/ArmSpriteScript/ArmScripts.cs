@@ -36,5 +36,5 @@ public class ArmScripts : MonoBehaviour
     {
         LeftArmAimator.gameObject.SetActive(false);
         RightArmAimator.gameObject.SetActive(false);
-    }    
+    }   
 }
