@@ -6,7 +6,7 @@ using static UnityEditor.Progress;
 
 public class Monster : MonoBehaviour
 {
-    [SerializeField] private float Hp = 15;
+    [SerializeField] private float Hp = 12;
     [SerializeField] private bool isDead = false;
     [SerializeField] private int Parts = 1;
 

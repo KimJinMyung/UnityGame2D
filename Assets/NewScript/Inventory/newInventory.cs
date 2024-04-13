@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -28,10 +29,32 @@ public class newInventory
         {
             grip = Inven[slotIndex-1];
             Inven[slotIndex - 1] = null;
-        }else if (Inven[slotIndex - 1] == null && grip != null)
+            GameManager.Instance.Print_Player_Grip_Ainimation();
+            GameManager.Instance.Print_Player_InvenSlot_Up_Animation(slotIndex);
+        }
+        else if (Inven[slotIndex - 1] == null && grip != null)
         {
             Inven[slotIndex-1] = grip;
             grip = null;
+            GameManager.Instance.Drop_UI_Aimation();
+            GameManager.Instance.Print_Player_InvenSlot_Up_Animation(slotIndex);
+        }        
+    }
+
+    public void Print_Inventory_Slot()
+    {
+        int index = 0;
+        foreach (Item item in Inven)
+        {
+            if (item != null)
+            {
+                GameManager.Instance.Print_Player_InvenSlot(item, index);
+            }
+            else
+            {
+                GameManager.Instance.Print_Player_InvenSlot(index);
+            }
+            index++;
         }
     }
 }

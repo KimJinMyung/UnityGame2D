@@ -11,7 +11,6 @@ using static UnityEngine.GraphicsBuffer;
 public enum PlayerState 
 {
     Idle,
-    Move,
     Crouch,
    // NormalAiming,
     PickUping,
@@ -21,7 +20,6 @@ public enum PlayerState
     BackSlide,
     Die
 }
-
 
 public class Player_Controller : MonoBehaviour
 {
@@ -50,15 +48,18 @@ public class Player_Controller : MonoBehaviour
     public Monster target {  get; private set; }
 
     public PlayerState state {  get; set; }
+    private bool isBattle;
+    private float lastAttackTime = 0f;
 
-    private newInventory playerInventory;
+    public newInventory playerInventory {  get; private set; }
     private Gun playerGun;
 
     private float Damage = 5;
     public float AttackDamage {  get; private set; }
 
     public float condition {  get; private set; }
-    public float forcus { get; private set; }
+    public float focus { get; private set; }
+    private bool isHealing = false;
 
     //[SerializeField]
     //private GameObject magazine;
@@ -77,9 +78,12 @@ public class Player_Controller : MonoBehaviour
         playerGun = new Gun();
 
         condition = 100;
-        forcus = 100;
+        focus = 100;
+
+        isBattle = false;
 
         GameManager.Instance.Init_Player_Grip();
+        GameManager.Instance.Init_Player_Inven();
     }
         
     public void OnMove(InputAction.CallbackContext context)
@@ -165,6 +169,9 @@ public class Player_Controller : MonoBehaviour
             if (state == PlayerState.PickUping || state == PlayerState.Die || state == PlayerState.Attack) return;
             if (!playerGun.equipedBullet) return;
 
+            isBattle = true;
+            lastAttackTime = Time.time;
+
             state = PlayerState.Attack;
 
             bodyAnimator.SetTrigger("Attack");
@@ -182,13 +189,27 @@ public class Player_Controller : MonoBehaviour
             //}
 
             //bullet 감소
-            playerGun.BackSlide();
-        }
+            //playerGun.BackSlide();
 
-        if (context.canceled)
-        {
-            state = PlayerState.Idle;            
-        }
+            if(target != null)
+            {
+                if (isHeadAiming) focus -= 30;
+                else if (isLegAiming) focus -= 15;
+                else { focus += 10; }
+            }
+            else
+            {
+                focus -= 25;
+            }
+            
+
+            focus = Mathf.Clamp(focus, 0f, 100f);
+        }        
+    }    
+    
+    public void AttackBackSlide()
+    {
+        playerGun.BackSlide();
     }
 
     public void OnCheckedEquipedBullet(InputAction.CallbackContext context)
@@ -202,7 +223,7 @@ public class Player_Controller : MonoBehaviour
         }
     }
 
-    public void OnTestPrint(InputAction.CallbackContext context)
+    public void OnChangeItemSlot(InputAction.CallbackContext context)
     {
         if (context.performed)
         {
@@ -210,7 +231,10 @@ public class Player_Controller : MonoBehaviour
             //만약 플레이어 손에 탄창이 없고 해당 slot에 탄창이 있으면 가져온다.
             //둘다 있거나 없으면 실행하지 않는다.
 
-            playerInventory.ChangeMagazineSlot((int)context.ReadValue<float>());
+            int index = (int)context.ReadValue<float>();
+          
+            playerInventory.ChangeMagazineSlot(index);
+            
         }
     }
 
@@ -467,7 +491,6 @@ public class Player_Controller : MonoBehaviour
         if (InputMoveDir.x != 0 && playerRigid.velocity.x < MaxSpeed && playerRigid.velocity.x > -MaxSpeed)
         {
             playerRigid.AddForce(Vector2.right * InputMoveDir.x * MoveSpeed);
-            state = PlayerState.Move;
             bodyAnimator.SetBool("Move", true);
         }
     }
@@ -515,19 +538,10 @@ public class Player_Controller : MonoBehaviour
    
     private void PrintSlots()
     {
-        if(playerInventory.grip != null)
-        //{
-        //    GameManager.Instance.Print_Player_Grip();
-        //}
-        //else
+        if(playerInventory.grip != null)        
         {
             GameManager.Instance.Print_Player_Grip(playerInventory.grip);           
         }
-    }
-
-    private void Print_Player_Status()
-    {
-        GameManager.Instance.Print_Player_Status();
     }
 
     private void FixedUpdate()
@@ -539,8 +553,33 @@ public class Player_Controller : MonoBehaviour
         AttackDamageDecide();
         PickUpAimation();
 
-        Print_Player_Status();
         PrintSlots();
+
+        playerInventory.Print_Inventory_Slot();
+        BattleModeEnd();
+    }
+
+    private void BattleModeEnd()
+    {
+        if (isBattle && Time.time - lastAttackTime >= 3f)
+        {
+            isBattle = false;            
+        }        
+
+        if (!isBattle && !isHealing)
+        {
+            StartCoroutine(RecoveryFocus());
+        }               
+    }
+
+    private IEnumerator RecoveryFocus()
+    {
+        isHealing = true;
+
+        focus = Mathf.Clamp(focus + 5, 0f, 100f);
+        yield return new WaitForSeconds(3f);
+
+        isHealing = false;
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
