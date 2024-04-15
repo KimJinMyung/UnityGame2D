@@ -33,6 +33,15 @@
                     "initialStateCheck": true
                 },
                 {
+                    "name": "LightAiming",
+                    "type": "Value",
+                    "id": "168038e7-01d8-4066-b432-2b5f128d8253",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "Press",
+                    "initialStateCheck": true
+                },
+                {
                     "name": "Attack",
                     "type": "Button",
                     "id": "7f0e6170-1ddd-4b2a-a4e8-e38aa701b71c",
@@ -321,6 +330,17 @@
                     "processors": "Scale(factor=4)",
                     "groups": "",
                     "action": "ChangeSlot",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "f6c4ef8e-3fb5-447c-ab82-795da1467f78",
+                    "path": "<Keyboard>/w",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "LightAiming",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

@@ -7,6 +7,7 @@ using UnityEngine.InputSystem.Interactions;
 using UnityEngine.Pool;
 using static UnityEditor.Experimental.GraphView.GraphView;
 using static UnityEngine.GraphicsBuffer;
+using static UnityEngine.Rendering.DebugUI;
 
 public enum PlayerState 
 {
@@ -18,6 +19,7 @@ public enum PlayerState
     Equiped,
     UnEquiped,
     BackSlide,
+    Hurt,
     Die
 }
 
@@ -44,26 +46,38 @@ public class Player_Controller : MonoBehaviour
 
     private bool isHeadAiming;
     private bool isLegAiming;
+    private bool isLightAiming;
+
     public LayerMask layer;
-    public Monster target {  get; private set; }
+    public Monster Monster_target {  get; private set; }
+    public MyLight Lights_target { get; private set; }
 
     public PlayerState state {  get; set; }
     private bool isBattle;
+
+    public bool isWaveStart;
+
     private float lastAttackTime = 0f;
 
     public newInventory playerInventory {  get; private set; }
     private Gun playerGun;
 
+    [SerializeField]
     private float Damage = 5;
     public float AttackDamage {  get; private set; }
-
+    [SerializeField]
     public float condition {  get; private set; }
+    [SerializeField]
     public float focus { get; private set; }
     private bool isHealing = false;
 
     //[SerializeField]
     //private GameObject magazine;
     private GameObject PickUpItemObject;
+
+    public bool isLightUnder {  get; private set; }
+    private float EvasionPer;
+    private bool isEvasionPer_change = false;
 
     private void Start()
     {
@@ -81,18 +95,25 @@ public class Player_Controller : MonoBehaviour
         focus = 100;
 
         isBattle = false;
+        isLightUnder = false;
+        isWaveStart = false;
+
+        layer = 64;
+        EvasionPer = 0;
+        isEvasionPer_change = false;
 
         GameManager.Instance.Init_Player_Grip();
         GameManager.Instance.Init_Player_Inven();
     }
         
     public void OnMove(InputAction.CallbackContext context)
-    {        
+    {
         InputMoveDir = context.ReadValue<Vector2>();
     }
 
     public void OnCrouch(InputAction.CallbackContext context)
     {
+        if (state == PlayerState.Hurt || state == PlayerState.Die) return;
         if (bodyAnimator.GetBool("PickUp")) return;
         if (context.performed)
         {
@@ -102,6 +123,7 @@ public class Player_Controller : MonoBehaviour
 
     public void OnLook(InputAction.CallbackContext context)
     {
+        if (state == PlayerState.Die) return;
         if (context.performed)
         {
             //state = PlayerState.NormalAiming;
@@ -128,17 +150,7 @@ public class Player_Controller : MonoBehaviour
                 ArmsTransform.localRotation = Quaternion.Euler(0f, 0f, rotationZ);
             }
 
-            if (target != null)
-            {
-                if (target.transform.position.x - transform.position.x > 0f)
-                {
-                    ArmsTransform.rotation = Quaternion.Euler(0f, 0f, 0f);
-                }
-                else if (target.transform.position.x - transform.position.x < 0f)
-                {
-                    ArmsTransform.localRotation = Quaternion.Euler(180f, 180f, 180f);
-                }
-            }
+            Decide_Target();
         }        
 
         if (context.canceled)
@@ -149,27 +161,66 @@ public class Player_Controller : MonoBehaviour
         }
     }
 
+    private void Decide_Target()
+    {
+        Transform target = null;
+
+        if (isLightAiming)
+        {
+            if (Lights_target != null)
+            {
+                target = Lights_target.transform;
+            }
+        }
+        else
+        {
+            if (Monster_target != null)
+            {
+                target = Monster_target.transform;
+            }
+        }
+
+        if(target != null)
+        {
+            if (target.position.x - transform.position.x > 0f)
+            {
+                ArmsTransform.rotation = Quaternion.Euler(0f, 0f, 0f);
+            }
+            else if (target.position.x - transform.position.x < 0f)
+            {
+                ArmsTransform.localRotation = Quaternion.Euler(180f, 180f, 180f);
+            }
+        }     
+    }
+
     public void OnHeadAiming(InputAction.CallbackContext context)
     {
-        if (isLegAiming) return;
+        if (isLegAiming || isLightAiming) return;
         isHeadAiming = context.ReadValue<float>() > 0f;
     }
 
     public void OnLegAiming(InputAction.CallbackContext context)
     {
-        if (isHeadAiming) return;
+        if (isHeadAiming || isLightAiming) return;
         isLegAiming = context.ReadValue<float>() > 0f;
     }
 
+    public void OnLightAiming(InputAction.CallbackContext context)
+    {
+        if (isHeadAiming || isLegAiming) return;
+        isLightAiming = context.ReadValue<float>() > 0f;
+    }
+
     public void OnAttack(InputAction.CallbackContext context)
-    {        
+    {
 
         if (context.performed)
         {
-            if (state == PlayerState.PickUping || state == PlayerState.Die || state == PlayerState.Attack) return;
+            if (state == PlayerState.PickUping || state == PlayerState.Die || state == PlayerState.Attack || state == PlayerState.Hurt) return;
             if (!playerGun.equipedBullet) return;
 
             isBattle = true;
+            isWaveStart = true;
             lastAttackTime = Time.time;
 
             state = PlayerState.Attack;
@@ -191,15 +242,19 @@ public class Player_Controller : MonoBehaviour
             //bullet 감소
             //playerGun.BackSlide();
 
-            if(target != null)
+            if(Monster_target != null)
             {
-                if (isHeadAiming) focus -= 30;
-                else if (isLegAiming) focus -= 15;
+                if (isHeadAiming) focus -= 15;
+                else if (isLegAiming) focus -= 10;
                 else { focus += 10; }
+            }
+            else if(Lights_target != null)
+            {
+                focus -= 15;
             }
             else
             {
-                focus -= 25;
+                focus -= 10;
             }
             
 
@@ -214,6 +269,7 @@ public class Player_Controller : MonoBehaviour
 
     public void OnCheckedEquipedBullet(InputAction.CallbackContext context)
     {
+        if (state == PlayerState.Hurt || state == PlayerState.Die || state == PlayerState.Attack) return;
         if (context.performed)
         {
             if(context.interaction is HoldInteraction)
@@ -225,6 +281,7 @@ public class Player_Controller : MonoBehaviour
 
     public void OnChangeItemSlot(InputAction.CallbackContext context)
     {
+        if (state == PlayerState.Die || state == PlayerState.Attack) return;
         if (context.performed)
         {
             //플레이어 손에 탄창이 있으면 누른 번호의 slot으로 이동
@@ -240,7 +297,8 @@ public class Player_Controller : MonoBehaviour
 
     public void OnEquip(InputAction.CallbackContext context)
     {
-        if(context.started)
+        if (state == PlayerState.Hurt || state == PlayerState.Die || state == PlayerState.PickUping) return;
+        if (context.started)
         {
             state = PlayerState.Equiped;
             
@@ -267,6 +325,7 @@ public class Player_Controller : MonoBehaviour
 
     public void OnUnEquip(InputAction.CallbackContext context)
     {
+        if (state == PlayerState.Hurt || state == PlayerState.Die || state == PlayerState.Attack) return;
         if (context.started)
         {
             state = PlayerState.UnEquiped;
@@ -283,15 +342,21 @@ public class Player_Controller : MonoBehaviour
             {
                 if (playerGun.equipedMagazine != null)
                 {
-                    ObjectPoolManager.Instance.Drop(playerGun.equipedMagazine,this.gameObject);
+                    if(playerGun.equipedMagazine.bulletCount > 0)
+                    {
+                        ObjectPoolManager.Instance.Drop(playerGun.equipedMagazine, this.gameObject);
+                    }                    
                     playerGun.UnEquip();
                 }
                 else
                 {
-                    ObjectPoolManager.Instance.Drop(playerInventory.grip, this.gameObject);
+                    if(playerInventory.grip.bulletCount > 0)
+                    {
+                        ObjectPoolManager.Instance.Drop(playerInventory.grip, this.gameObject);
+                    }                
                     playerInventory.Equip();
                     //GameManager.Instance.Print_Player_Grip_Ainimation();
-                    GameManager.Instance.Drop_UI_Aimation();
+                    //GameManager.Instance.Drop_UI_Aimation();
                 }
             }
             else
@@ -311,6 +376,7 @@ public class Player_Controller : MonoBehaviour
 
     public void OnPickUp(InputAction.CallbackContext context)
     {
+        if (state == PlayerState.Hurt || state == PlayerState.Die) return;
         //아래에 총탄이 있으면 3초동안 홀드하여 줍는다.
         //없으면 잠시 멈춰 땅을 짚고 곧바로 일어선다.
         //플레이어의 손에 총탄이 있으면 버린다.
@@ -318,13 +384,13 @@ public class Player_Controller : MonoBehaviour
         {
             if (playerInventory.grip != null)
             {
-                ObjectPoolManager.Instance.Drop(playerInventory.grip, this.gameObject);
+                if(playerInventory.grip.bulletCount > 0)
+                    ObjectPoolManager.Instance.Drop(playerInventory.grip, this.gameObject);
                 playerInventory.Equip();
                 return;
             }
             playerRigid.velocity = Vector3.zero;
-            state = PlayerState.PickUping;
-            
+            state = PlayerState.PickUping;            
         }
 
         if (context.performed)
@@ -370,6 +436,7 @@ public class Player_Controller : MonoBehaviour
             bodyAnimator.SetBool("PickUp", true);
             bodyAnimator.SetBool("Move", false);
             bodyAnimator.SetBool("Crouch", false);
+            
         }
         //else
         //{
@@ -393,6 +460,7 @@ public class Player_Controller : MonoBehaviour
     }
     public void OnBackSlide(InputAction.CallbackContext context)
     {
+        if (state == PlayerState.Hurt || state == PlayerState.Die) return;
         if (context.started)
         {
             state = PlayerState.BackSlide;
@@ -434,6 +502,7 @@ public class Player_Controller : MonoBehaviour
 
     private void Crouch()
     {
+        if (state == PlayerState.Hurt || state == PlayerState.Die) return;
         if(state != PlayerState.Crouch) 
         { 
             state = PlayerState.Crouch;
@@ -495,45 +564,121 @@ public class Player_Controller : MonoBehaviour
         }
     }
 
-    private void Aiming()
+    private void Decide_Aiming_Target_Layer()
     {
-        Vector2 startPos = new Vector2(transform.position.x, transform.position.y);
-        RaycastHit2D[] hit = Physics2D.RaycastAll(new Vector2(startPos.x, startPos.y + 0.1f), PlayerRotation, 8f, layer);
-        Debug.DrawRay(startPos, PlayerRotation * 8f, Color.green);
+        if (isLightAiming)
+        {
+            layer = 1024;
+        }
+        else
+        {
+            layer = 64;
+        }
+    }
+
+    private void LightsAiming(RaycastHit2D[] hit)
+    {
+        if (Monster_target != null)
+        {
+            Monster_target.SetTargeted();
+            Monster_target = null;
+        }
+        
         if (hit.Length != 0)
         {
-
             float closetDistance = float.MaxValue;
             foreach (var hit2 in hit)
             {
-                Monster targets = hit2.transform.GetComponent<Monster>();
+                MyLight targets = hit2.transform.GetComponent<MyLight>();
+
                 if (targets != null)
                 {
                     float distance = Mathf.Abs(Vector2.Distance(hit2.transform.position, mousePosition));
                     if (distance < closetDistance)
                     {
                         closetDistance = distance;
-                        if (target != null)
+                        if (Lights_target != null)
                         {
-                            target.SetTargeted();
+                            Lights_target.OffTargeting();
                         }
-                        target = targets;
+                        Lights_target = targets;
                     }
                 }
             }
-            if (target != null)
+            if (Lights_target != null)
             {
-                target.SetTargeted(isHeadAiming, isLegAiming);
+                Lights_target.OnTargeting();
             }
         }
         else
         {
-            if (target != null)
+            if (Lights_target != null)
             {
-                target.SetTargeted();
+                Lights_target.OffTargeting();
             }
-            target = null;
+            Lights_target = null;
         }
+    }
+
+    private void MonsterAiming(RaycastHit2D[] hit)
+    {
+        if (Lights_target != null)
+        {
+            Lights_target.OffTargeting();
+            Lights_target = null;
+        }
+        if (hit.Length != 0)
+        {
+            float closetDistance = float.MaxValue;
+            foreach (var hit2 in hit)
+            {
+                Monster targets = hit2.transform.GetComponent<Monster>();
+
+                if (targets != null)
+                {
+                    float distance = Mathf.Abs(Vector2.Distance(hit2.transform.position, mousePosition));
+                    if (distance < closetDistance)
+                    {
+                        closetDistance = distance;
+                        if (Monster_target != null)
+                        {
+                            Monster_target.SetTargeted();
+                        }
+                        Monster_target = targets;
+                    }
+                }
+            }
+            if (Monster_target != null)
+            {
+                Monster_target.SetTargeted(isHeadAiming, isLegAiming);
+            }
+        }
+        else
+        {
+            if (Monster_target != null)
+            {
+                Monster_target.SetTargeted();
+            }
+            Monster_target = null;
+        }
+    }
+
+    private void Aiming()
+    {
+        Decide_Aiming_Target_Layer();
+        Vector2 startPos = new Vector2(transform.position.x, transform.position.y);
+        RaycastHit2D[] hit = Physics2D.RaycastAll(new Vector2(startPos.x, startPos.y + 0.1f), PlayerRotation, 8f, layer);
+        Debug.DrawRay(startPos, PlayerRotation * 8f, Color.green);
+
+        if (!isLightAiming)
+        {
+            MonsterAiming(hit);
+        }
+        else
+        {
+            LightsAiming(hit);
+        }
+        
     }
    
     private void PrintSlots()
@@ -544,11 +689,66 @@ public class Player_Controller : MonoBehaviour
         }
     }
 
+    public void Hurt(float ATKdamage, Transform attackMonster)
+    {
+        if (state == PlayerState.Die) return;
+        if(Random.Range(0,100f)  >= EvasionPer) 
+        {
+            state = PlayerState.Hurt;
+            playerRigid.velocity = Vector3.zero;
+            if (PlayerRotation.x * (transform.position.x - attackMonster.position.x) > 0f)
+            {
+                condition = 0;
+            }
+            else
+            {
+                condition -= ATKdamage;                
+            }
+
+            if (condition <= 0)
+            {
+                Dead();
+            }
+            else  bodyAnimator.SetTrigger("Hurt");
+        }        
+    }
+
+    private void Dead()
+    {
+        state = PlayerState.Die;
+        playerRigid.velocity = Vector3.zero;
+        
+        //사망 애니메이션 실행
+        bodyAnimator.SetTrigger("Dead");
+
+        //1.5초 후에 게임 오버 씬 출력
+    }
+
+    private void EvasionPer_Up(float value)
+    {
+        if (!isEvasionPer_change)
+        {
+            EvasionPer += value;
+            isEvasionPer_change = true;
+        }         
+    }
+
+    private void EvasionPer_Down(float value)
+    {
+        if (isEvasionPer_change)
+        {
+            EvasionPer -= value;
+            isEvasionPer_change = false;
+        }
+
+    }
+
     private void FixedUpdate()
     {
         Move();
         SpriteRotate();
         SpriteMove();
+        //Decide_Target();
         Aiming();
         AttackDamageDecide();
         PickUpAimation();
@@ -582,11 +782,17 @@ public class Player_Controller : MonoBehaviour
         isHealing = false;
     }
 
-    private void OnTriggerEnter2D(Collider2D collision)
+    private void OnTriggerStay2D(Collider2D collision)
     {
         if (collision.CompareTag("Magazine"))
         {
             PickUpItemObject = collision.transform.parent.gameObject;
+        }
+
+        if (collision.gameObject.layer == 10)
+        {
+            isLightUnder = true;
+            EvasionPer_Down(20);
         }
     }
 
@@ -595,6 +801,12 @@ public class Player_Controller : MonoBehaviour
         if (collision.CompareTag("Magazine"))
         {
             PickUpItemObject = null;
+        }
+
+        if(collision.gameObject.layer == 10)
+        {
+            isLightUnder = false;
+            EvasionPer_Up(20);
         }
     }
 }

@@ -59,5 +59,13 @@ public class ObjectPoolManager : MonoBehaviour
         var newMagazine = Instance.pool.Get();
         newMagazine.GetComponent<Magazine>().SetMagazine(item, true);
         newMagazine.transform.position = dropPos;
+        StartCoroutine(ReleaseMagazine(newMagazine));
+    }
+
+    private IEnumerator ReleaseMagazine(GameObject magazine)
+    {
+        yield return new WaitForSeconds(30f);
+        OnReleaseMagazine(magazine);
+        yield break;
     }
 }

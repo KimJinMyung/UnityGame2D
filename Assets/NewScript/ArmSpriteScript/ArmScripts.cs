@@ -14,7 +14,7 @@ public class ArmScripts : MonoBehaviour
 
     private void Awake()
     {
-        player = GetComponent<Player_Controller>();
+        player = transform.parent.GetComponent<Player_Controller>();
     }
 
     void Start()
@@ -30,6 +30,8 @@ public class ArmScripts : MonoBehaviour
         LeftArmAimator.gameObject.SetActive(true);
         bodyAnimator.SetBool("PickUp", false);
         transform.GetChild(0).transform.localPosition = new Vector2(-0.15f, 0.15f);
+
+        //player.state = PlayerState.Idle;
     }
 
     void ArmUnActive()
@@ -37,4 +39,9 @@ public class ArmScripts : MonoBehaviour
         LeftArmAimator.gameObject.SetActive(false);
         RightArmAimator.gameObject.SetActive(false);
     }   
+
+    void Hurt_After()
+    {
+        player.state = PlayerState.Idle;
+    }    
 }
