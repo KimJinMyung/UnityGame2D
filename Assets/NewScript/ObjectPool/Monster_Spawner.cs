@@ -13,22 +13,36 @@ public class Monster_Spawner : MonoBehaviour
     [SerializeField]
     private Transform[] spawnPoints;
 
+    private Vector2 MinPos;
+    private Vector2 MaxPos;
+
+    [SerializeField]
+    private GameObject Ground; 
+
     public IObjectPool<GameObject> MonsterPool;
 
     private float ReleaseCount=0f;
     private float spawnTime = 0f;
 
+    [SerializeField]
+    private float MaxMonsterCount = 5f;
+
     private void Awake()
     {
         if(instance == null) instance = this;
-        else Destroy(this.gameObject);
+        else Destroy(this.gameObject);       
 
         Init();
-    }    
+    }
+
+    private void Start()
+    {
+        MinPos = new Vector2(-(Ground.transform.localScale.x / 2) + Ground.transform.position.x - 14f, 0);
+        MaxPos = new Vector2((Ground.transform.localScale.x / 2 + Ground.transform.position.x) + 14f, 0);
+    }
 
     private void Init()
     {
-        float MaxMonsterCount = 5f;
         MonsterPool = new ObjectPool<GameObject>(CreateMonster, OnGetMonster, OnReleaseMonster, OnDestroyMonster, maxSize: (int)MaxMonsterCount);
         ReleaseCount = MaxMonsterCount;
 
@@ -43,7 +57,7 @@ public class Monster_Spawner : MonoBehaviour
     {
         if (ReleaseCount > 0f && GameManager.Instance.GetPlayer.GetComponent<Player_Controller>().isWaveStart)
         {
-            if (Time.time - spawnTime > Random.Range(5f, 8f))
+            if (Time.time - spawnTime > Random.Range(3f, 7f))
             {
                 MonsterRespawn();
             }
@@ -55,14 +69,25 @@ public class Monster_Spawner : MonoBehaviour
         spawnTime = Time.time;
 
         Vector2 spwanPoint;
-        if (Random.Range(0, 100f) < 50f)
+        if (spawnPoints[1].position.x < MinPos.x)
         {
             spwanPoint = spawnPoints[0].position;
         }
-        else
+        else if(spawnPoints[0].position.x > MaxPos.x)
         {
             spwanPoint = spawnPoints[1].position;
         }
+        else
+        {
+            if (Random.Range(0, 100f) < 50f)
+            {
+                spwanPoint = spawnPoints[0].position;
+            }
+            else
+            {
+                spwanPoint = spawnPoints[1].position;
+            }
+        }        
 
         var newMonster = instance.MonsterPool.Get();
         newMonster.GetComponent<Monster>().SetMonster(12, 30, false);

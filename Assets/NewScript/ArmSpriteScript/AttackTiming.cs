@@ -30,7 +30,7 @@ public class AttackTiming : MonoBehaviour
             }
             else
             {
-                Accuracy = Mathf.Clamp(player.focus * 1.5f, 5f, 100f);
+                Accuracy = Mathf.Clamp(player.focus * 1.5f, 10f, 100f);
             }
 
             float AttackSuccess = Random.Range(0, 100f);

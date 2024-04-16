@@ -6,6 +6,8 @@ using UnityEngine.Pool;
 
 public class Magazine : MonoBehaviour
 {
+    [SerializeField]
+    private float TestBulletCount;
     public Item bullet {  get; private set; }
     public bool isPickUped = false;
 
@@ -16,7 +18,15 @@ public class Magazine : MonoBehaviour
         if(bullet == null)
         {            
             bullet = new Item();
-            bullet.bulletCount = 15;
+            if(TestBulletCount > 0)
+            {
+                bullet.bulletCount = (int)TestBulletCount;
+            }
+            else
+            {
+                bullet.bulletCount = 15;
+            }
+            
         }        
         if(Pool == null)
         {

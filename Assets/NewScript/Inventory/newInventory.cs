@@ -5,12 +5,17 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Interactions;
 
-public class newInventory
+public class NewInventory
 {
     public Item grip {  get; private set; }
-    private Item[] Inven = new Item[4];
+    public Item[] Inven {  get; private set; }
 
     private Vector2 dropPos = Vector2.zero;
+
+    public NewInventory()
+    {
+        Inven = new Item[4];
+    }
 
     public void Equip()
     {
@@ -55,6 +60,22 @@ public class newInventory
                 GameManager.Instance.Print_Player_InvenSlot(index);
             }
             index++;
+        }
+    }
+
+    public void RechargeAll()
+    {
+        foreach (Item item in Inven)
+        {
+            if (item != null)
+            {
+                item.bulletCount = 15;
+            }
+        }
+
+        if(grip != null)
+        {
+            grip.bulletCount = 15;
         }
     }
 }

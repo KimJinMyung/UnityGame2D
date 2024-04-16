@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Pool;
 using static UnityEditor.Progress;
+using static UnityEngine.GraphicsBuffer;
 
 enum State
 {
@@ -20,13 +21,11 @@ public class Monster : MonoBehaviour
     [SerializeField] private int Parts = 1;
     [SerializeField] private float MoveSpeed = 3f;  //이동 속도
     [SerializeField] private float EvasionPer;  //회피율
-    [SerializeField] private float Accuracy;    //명중률
     //[SerializeField] private float MaxSpeed = 5f;
 
     private Rigidbody2D monster_Rigid;
     private SpriteRenderer[] Aiming;
     private bool isBleeding = false;
-    private bool isAttacking = false;
 
     private Gun MonsterGun;
 
@@ -44,13 +43,21 @@ public class Monster : MonoBehaviour
     private float Velocity;
 
     private State monster_State;
-    private LayerMask LayerMask = 512;
+    private LayerMask LayerMask;
+    private LayerMask AttackLayerMask;
     private bool isEvasionPer_change = false;
+
+    private Animator monster_Animation;
+    private GameObject target;
+
+    private bool isDontMove;
 
     private void Awake()
     {
         monster_Rigid= GetComponent<Rigidbody2D>();
-        Aiming = new SpriteRenderer[3];           
+        Aiming = new SpriteRenderer[3];
+
+        monster_Animation = GetComponent<Animator>();
     }
 
     private void Start()
@@ -71,8 +78,36 @@ public class Monster : MonoBehaviour
 
         monster_State = State.Idle;
         LayerMask = 512;
-        Accuracy = 40;
+        AttackLayerMask = 4608;
         EvasionPer = 0;
+
+        isDontMove = false;
+
+        MonsterGun = new Gun();
+        Reload();
+    }
+
+    private void FixedUpdate()
+    {        
+        Monster_Move();
+        Raycast_Dir();
+        Look();
+    }
+
+    private void HitBox_Position()
+    {
+        if(monster_Animation.GetBool("Down"))
+        {
+            transform.GetChild(0).gameObject.transform.localPosition = new Vector3(-0.63f, -0.38f,0);
+            transform.GetChild(1).gameObject.transform.localPosition = new Vector3(-0.32f, -0.68f, 0);
+            transform.GetChild(2).gameObject.transform.localPosition = new Vector3(0.32f, -0.77f,0);
+        }
+        else
+        {
+            transform.GetChild(0).gameObject.transform.localPosition = new Vector3(0f, 0.56f,0);
+            transform.GetChild(1).gameObject.transform.localPosition = new Vector3(0f, -0.04f,0);
+            transform.GetChild(2).gameObject.transform.localPosition = new Vector3(0f, -0.6f, 0);
+        }
     }
 
     public void SetMonster(float HP, float ATK, bool isDead)
@@ -80,9 +115,12 @@ public class Monster : MonoBehaviour
         this.Hp = HP;
         this.ATK = ATK;
         this.isDead = isDead;
-        isEvasionPer_change = false;
-        
+        isEvasionPer_change = false;        
+
         monster_State = State.Idle;
+        monster_Animation.SetBool("Down", false);
+        HitBox_Position();
+        isDontMove = false;
         monster_Rigid.constraints = RigidbodyConstraints2D.FreezeRotation;
         transform.rotation = Quaternion.identity;
         gameObject.layer = 6;
@@ -92,23 +130,35 @@ public class Monster : MonoBehaviour
     {
         HitParts();
 
-        if (Random.Range(0,100f) > EvasionPer)
+        if (Random.Range(0,100f) >= EvasionPer)
         {
             if (Parts == 2)
             {
                 //if(rb == null) rb = GetComponent<Rigidbody2D>();
                 if (transform.rotation.z == 0)
                 {
-                    isAttacking = Random.Range(0,100f) < 30f ? false : true;
                     monster_State = State.Down;
-                    monster_Rigid.constraints = RigidbodyConstraints2D.None;
-                    float RotationdDir = transform.position.x - GameManager.Instance.GetPlayer.transform.position.x < 0f ? -60f : 60f;
-                    transform.Rotate(0, 0, RotationdDir);
+                    isDontMove = true;
+                    monster_Animation.SetBool("Down", true);
+                    HitBox_Position();
+                    //monster_Rigid.constraints = RigidbodyConstraints2D.None;
+                    //float RotationdDir = transform.position.x - GameManager.Instance.GetPlayer.transform.position.x < 0f ? -60f : 60f;
+                    //transform.Rotate(0, 0, RotationdDir);
                 }
             }
             Debug.Log($"{damage}만큼의 공격을 받았습니다.");
             Hp -= damage;
 
+            if (Hp <= 0)
+            {
+                isDead = true;
+                Die();
+            }
+            else
+            {
+                monster_Animation.SetTrigger("Hurt");
+            }
+            
             if (!isBleeding)
             {
                 isBleeding = true;
@@ -116,25 +166,23 @@ public class Monster : MonoBehaviour
             }
         }
 
-        if (Hp <= 0)
-        {
-            isDead = true;
-            Die();
-        }
+        
     }
 
     public void Die()
     {
+        isBleeding = false;
         monster_State = State.Dead;
+        monster_Animation.SetTrigger("Dead");
         StopAllCoroutines();
         MoveDir = Vector2.zero;
         //transform.gameObject.SetActive(false);
-        if (transform.rotation.z == 0)
-        {
-            monster_Rigid.constraints = RigidbodyConstraints2D.None;
-            float RotationdDir = transform.position.x - GameManager.Instance.GetPlayer.transform.position.x < 0f ? -60f : 60f;
-            transform.Rotate(0, 0, RotationdDir);
-        }
+        //if (transform.rotation.z == 0)
+        //{
+        //    monster_Rigid.constraints = RigidbodyConstraints2D.None;
+        //    float RotationdDir = transform.position.x - GameManager.Instance.GetPlayer.transform.position.x < 0f ? -60f : 60f;
+        //    transform.Rotate(0, 0, RotationdDir);
+        //}        
         OffTargeting();
         gameObject.layer = 7;
         Item item = new Item();
@@ -214,15 +262,16 @@ public class Monster : MonoBehaviour
             yield return new WaitForSeconds(2f);
 
             // 피해를 입히는 부분
-            Hurt(1);
-            Debug.Log("Bleeding...");
+            Hp -= 1;
+            if (Hp <= 0) Die();
         }
     }
 
     private void Monster_Move()
     {
-        if(monster_State == State.Dead || monster_State == State.Down) return;
-        if (Target_Player.GetComponent<Player_Controller>().isWaveStart)
+        if(isDontMove) return;
+        if(monster_State == State.Dead || monster_State == State.Down || monster_State == State.Attack) return;
+        else if (Target_Player.GetComponent<Player_Controller>().isWaveStart)
         {            
             if (Target_Player.transform.position.x - transform.position.x < 0f)
             {
@@ -233,15 +282,25 @@ public class Monster : MonoBehaviour
                 transform.eulerAngles = new Vector3(0, 0, 0);
             }
 
-            if(Mathf.Abs(Target_Player.transform.position.x - transform.position.x) >= 4.5f) MoveDir = Vector2.right;
-            else MoveDir = Vector2.zero;
+            if (Mathf.Abs(Target_Player.transform.position.x - transform.position.x) >= 4.5f)
+            {
+                monster_Animation.SetBool("Move", true);
+                MoveDir = Vector2.right;
+            }
+            else
+            {
+                monster_Animation.SetBool("Move", false);
+                MoveDir = Vector2.zero;
+            }
 
-            transform.Translate(MoveDir * MoveSpeed * Time.deltaTime);
+            transform.Translate(MoveDir * MoveSpeed * Time.deltaTime);            
         }
     }    
 
     private void Raycast_Dir()
     {
+        if (isDontMove) return;
+        if (monster_State == State.Down || monster_State == State.Dead) return;
         if (transform.eulerAngles.y == 0)
         {
             RaycastDir = Vector2.right;
@@ -263,47 +322,85 @@ public class Monster : MonoBehaviour
             Target_Player.GetComponent<Player_Controller>().isWaveStart = true;
             //monster_State = State.Attack;
 
-            if (!isAttacking)
+            if (monster_State != State.Attack)
             {
-                if (MonsterGun.equipedBullet)
-                {
-                    StartCoroutine(Attack(hit.transform.gameObject));
-                }
-                else
-                {
-                    if(MonsterGun.equipedMagazine.bulletCount < 0)
-                    {
-                        //재장전 애니메이션
-                        isAttacking = true;
-                        Item newMagazine = new Item();
-                        newMagazine.bulletCount = 15;
-                        MonsterGun.Equip(newMagazine);
-                        isAttacking = false;
-                    }else
-                    MonsterGun.BackSlide();
-                }
-                
+                Attack_Target();
             }            
         }
     }
 
-    private IEnumerator Attack(GameObject target)
-    {               
-        isAttacking = true;
-        if(Random.Range(0,100f) < Accuracy)
-            target.GetComponent<Player_Controller>().Hurt(ATK, this.transform);
-        MonsterGun.BackSlide();
-        yield return new WaitForSeconds(1.5f);
-        isAttacking = false;
-        yield break;
+    private void Reload()
+    {
+        monster_State = State.Attack;
+        Item newMagazine = new Item();
+        newMagazine.bulletCount = 15;
+        MonsterGun.Equip(newMagazine);
+        monster_State = State.Idle;
     }
 
-    private void FixedUpdate()
-    {
-        Monster_Move();
-        Raycast_Dir();
-        Look();
+    private void Attack_Target()
+    {        
+        Vector2 startPoint = (transform.position + new Vector3(0, 0.2f, 0));
+        Vector2 RandomAngle = new Vector2(RaycastDir.x, Random.Range(-0.5f, 0.6f));
+        RaycastHit2D attackTarget = Physics2D.Raycast(startPoint, RandomAngle, 5.5f, AttackLayerMask);
+        Debug.DrawLine(startPoint, startPoint + RandomAngle * 5.5f, Color.black);       
+
+        if (attackTarget.transform != null)
+        {
+            if (attackTarget.transform.gameObject.layer == 9)
+            {
+                target = attackTarget.transform.gameObject;
+            }
+        }
+        else
+        {
+            target = null;
+        }
+
+        Attack_Animation();
     }
+
+    private void Attack_Animation()
+    {
+        if (MonsterGun.equipedBullet)
+        {
+            monster_Animation.SetTrigger("Attack");
+        }
+        else
+        {
+            if (MonsterGun.equipedMagazine.bulletCount < 0)
+            {
+                //재장전 애니메이션
+                Reload();
+            }
+
+            MonsterGun.BackSlide();
+        }
+    }
+
+    private void Attack_Start()
+    {
+        monster_State = State.Attack;
+    }
+
+    private void Attack_End()
+    {
+        StartCoroutine(AttackDelay());
+    }
+
+    private IEnumerator AttackDelay()
+    {
+        yield return new WaitForSeconds(1f);
+        monster_State = State.Idle;
+        yield break;
+    }
+    
+    private void Attack()
+    {
+        if (target == null) return;
+        target.GetComponent<Player_Controller>().Hurt(ATK, this.transform);
+        MonsterGun.BackSlide();
+    }    
 
     private void EvasionPer_Up(float value)
     {

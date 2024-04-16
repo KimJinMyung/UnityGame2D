@@ -13,18 +13,32 @@ public class MyCamera : MonoBehaviour
 
     Camera cam;
 
+    [SerializeField]
+    private GameObject Ground;
+
+    private float Min_Carmera_Pos;
+    private float Max_Carmera_Pos;
+
     private void Awake()
     {
-        camSize = 6.0f;
+        camSize = 4.5f;
         cam = GetComponent<Camera>();
+    }
+
+    private void Start()
+    {
+        Min_Carmera_Pos = -(Ground.transform.localScale.x / 2) + Ground.transform.position.x + 9.5f;
+        Max_Carmera_Pos = (Ground.transform.localScale.x / 2) + Ground.transform.position.x - 9.5f;
     }
 
     private void FixedUpdate()
     {
-        Vector3 ScreenAimPoint = /*Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, Camera.main.transform.position.z));*/ Camera.main.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, Camera.main.transform.position.z));
-        Vector3 offset = ScreenAimPoint - new Vector3(Screen.width * 0.5f, Screen.height * 0.5f,0) * 0.0001f * camSize; //화면 중심 계산
-        camPosition = GameManager.Instance.GetPlayer.transform.position + new Vector3(0, 0, -10) + offset * camRange;
-        this.transform.position = Vector3.Lerp(this.transform.position, camPosition, camSpeed * Time.deltaTime);
+        Vector3 ScreenAimPoint = Input.mousePosition;
+       
+        Vector3 offset = (ScreenAimPoint - new Vector3(Screen.width * 0.5f, Screen.height * 0.5f,0)) * 0.0001f * camSize; //화면 중심 계산
+        camPosition = GameManager.Instance.GetPlayer.transform.position + new Vector3(0, 2f, -10) + offset * camRange;
+        Vector3 MoveScreen = Vector3.Lerp(this.transform.position, camPosition, camSpeed * Time.deltaTime);
+        this.transform.position = new Vector3(Mathf.Clamp(MoveScreen.x, Min_Carmera_Pos, Max_Carmera_Pos), MoveScreen.y, MoveScreen.z);
         cam.orthographicSize = camSize;
     }
 }

@@ -37,7 +37,9 @@ public class Player_Controller : MonoBehaviour
     public float MoveSpeed = 10f;
     public float MaxSpeed = 4f;
 
-    public float CrouchHeiht = 0.7f;
+    [SerializeField] private float CrouchHeiht = 0.7f;
+    //private bool isContactCover = false;
+    private LayerMask Cover;
     private Vector2 normalArmPos;
 
     private Vector2 mousePosition;
@@ -54,12 +56,11 @@ public class Player_Controller : MonoBehaviour
 
     public PlayerState state {  get; set; }
     private bool isBattle;
-
     public bool isWaveStart;
 
     private float lastAttackTime = 0f;
 
-    public newInventory playerInventory {  get; private set; }
+    public NewInventory playerInventory {  get; private set; }
     private Gun playerGun;
 
     [SerializeField]
@@ -79,6 +80,8 @@ public class Player_Controller : MonoBehaviour
     private float EvasionPer;
     private bool isEvasionPer_change = false;
 
+    public bool isContectDepot = false;
+
     private void Start()
     {
         playerRigid = GetComponent<Rigidbody2D>();
@@ -88,7 +91,7 @@ public class Player_Controller : MonoBehaviour
         LeftArmAimator = transform.GetChild(0).GetChild(0).GetChild(1).GetComponent<Animator>();
         ArmsTransform = transform.GetChild(0).GetChild(0).transform;
         state = PlayerState.Idle;
-        playerInventory = new newInventory();
+        playerInventory = new NewInventory();
         playerGun = new Gun();
 
         condition = 100;
@@ -99,7 +102,8 @@ public class Player_Controller : MonoBehaviour
         isWaveStart = false;
 
         layer = 64;
-        EvasionPer = 0;
+        Cover = 4096;
+        EvasionPer = 10;
         isEvasionPer_change = false;
 
         GameManager.Instance.Init_Player_Grip();
@@ -150,7 +154,7 @@ public class Player_Controller : MonoBehaviour
                 ArmsTransform.localRotation = Quaternion.Euler(0f, 0f, rotationZ);
             }
 
-            Decide_Target();
+            //Decide_Target();
         }        
 
         if (context.canceled)
@@ -163,24 +167,18 @@ public class Player_Controller : MonoBehaviour
 
     private void Decide_Target()
     {
-        Transform target = null;
+        Transform target = null;        
 
-        if (isLightAiming)
+        if (Lights_target != null)
         {
-            if (Lights_target != null)
-            {
-                target = Lights_target.transform;
-            }
+            target = Lights_target.transform;
         }
-        else
+        else if (Monster_target != null)
         {
-            if (Monster_target != null)
-            {
-                target = Monster_target.transform;
-            }
+            target = Monster_target.transform;
         }
 
-        if(target != null)
+        if (target != null)
         {
             if (target.position.x - transform.position.x > 0f)
             {
@@ -225,7 +223,7 @@ public class Player_Controller : MonoBehaviour
 
             state = PlayerState.Attack;
 
-            bodyAnimator.SetTrigger("Attack");
+            //bodyAnimator.SetTrigger("Attack");
             RightArmAimator.SetTrigger("Attack");
             LeftArmAimator.SetTrigger("Attack");
             //bodyAnimator.SetBool("Attack", true);
@@ -417,6 +415,11 @@ public class Player_Controller : MonoBehaviour
             }
             else
             {
+                if (context.interaction is HoldInteraction)
+                {
+                    ReCharge_Inventory_Magazine();
+                }
+                
                 state = PlayerState.Idle;
                 bodyAnimator.SetBool("PickUp", false);
                 return;
@@ -568,7 +571,7 @@ public class Player_Controller : MonoBehaviour
     {
         if (isLightAiming)
         {
-            layer = 1024;
+            layer = 2048;
         }
         else
         {
@@ -694,6 +697,14 @@ public class Player_Controller : MonoBehaviour
         if (state == PlayerState.Die) return;
         if(Random.Range(0,100f)  >= EvasionPer) 
         {
+            if(bodyAnimator.GetBool("Crouch"))
+            {
+                bodyAnimator.SetBool("Crouch", false);
+                capsuleCollider.transform.parent.localScale = new Vector2(capsuleCollider.transform.localScale.x, 1);
+                capsuleCollider.transform.parent.localPosition = new Vector2(0, 0);
+                ArmsTransform.position = normalArmPos;
+            }
+
             state = PlayerState.Hurt;
             playerRigid.velocity = Vector3.zero;
             if (PlayerRotation.x * (transform.position.x - attackMonster.position.x) > 0f)
@@ -749,6 +760,9 @@ public class Player_Controller : MonoBehaviour
         SpriteRotate();
         SpriteMove();
         //Decide_Target();
+
+        Decide_Target();
+        ContactCover();
         Aiming();
         AttackDamageDecide();
         PickUpAimation();
@@ -757,6 +771,40 @@ public class Player_Controller : MonoBehaviour
 
         playerInventory.Print_Inventory_Slot();
         BattleModeEnd();
+    }
+
+    private void ContactCover()
+    {        
+        RaycastHit2D hit = Physics2D.Raycast(transform.position + new Vector3(0, 0.1f, 0), PlayerRotation, 2.5f, Cover);
+        if(hit.transform != null)
+        {
+            Debug.Log("¾öÆó¹° ¹ß°ß");
+            //isContactCover = true;
+            if (state == PlayerState.Crouch)
+            {
+                if(hit.transform.position.x - transform.position.x > 0f)
+                {
+                    transform.position = this.transform.position + new Vector3(hit.distance - 1.4f, 0f, 0f);
+                }
+                else if(hit.transform.position.x - transform.position.x < 0f)
+                {
+                    transform.position = this.transform.position - new Vector3(hit.distance - 1.4f, 0f, 0f);
+                }
+                
+            }
+        }
+    }       
+    
+    public void ReCharge_Inventory_Magazine()
+    {
+        if (isContectDepot)
+        {
+            playerInventory.RechargeAll();
+            for(int i  = 1; i < 5; i++)
+            {
+                GameManager.Instance.Print_Player_InvenSlot_Up_Animation(i);
+            }            
+        }
     }
 
     private void BattleModeEnd()
@@ -792,7 +840,7 @@ public class Player_Controller : MonoBehaviour
         if (collision.gameObject.layer == 10)
         {
             isLightUnder = true;
-            EvasionPer_Down(20);
+            EvasionPer_Down(40);
         }
     }
 
@@ -806,7 +854,7 @@ public class Player_Controller : MonoBehaviour
         if(collision.gameObject.layer == 10)
         {
             isLightUnder = false;
-            EvasionPer_Up(20);
+            EvasionPer_Up(40);
         }
     }
 }

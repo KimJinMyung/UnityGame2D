@@ -44,4 +44,9 @@ public class ArmScripts : MonoBehaviour
     {
         player.state = PlayerState.Idle;
     }    
+
+    void ReCharge_Bullet()
+    {
+        GameManager.Instance.GetPlayer.GetComponent<Player_Controller>().ReCharge_Inventory_Magazine();
+    }
 }
