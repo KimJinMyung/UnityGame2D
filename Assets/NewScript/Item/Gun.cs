@@ -29,10 +29,23 @@ public class Gun
             equipedMagazine.bulletCount--;
             equipedBullet = true;
         }       
+
     }
 
     public bool ChedkEquipedBullet()
     {
         return equipedBullet;
+    }
+
+    public void Load_Gun(int EquipedMagazine, bool EquipedBullet)
+    {
+        this.equipedMagazine = new Item();
+
+        if (EquipedMagazine > 0)
+            this.equipedMagazine.bulletCount = EquipedMagazine;
+        else
+            this.equipedMagazine = null;
+
+        this.equipedBullet = EquipedBullet;
     }
 }

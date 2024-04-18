@@ -14,13 +14,28 @@ public class NewInventory
 
     public NewInventory()
     {
+        //grip = new Item();
         Inven = new Item[4];
+
+        //Inven[0] = new Item();
+        //Inven[1] = new Item();
+        //Inven[2] = new Item();
+        //Inven[3] = new Item();
+    }
+
+    public void NewGame_Init_Inventory()
+    {
+        grip = null;
+        for(int i = 0; i < Inven.Length; i++)
+        {
+            Inven[i] = null;
+        }
     }
 
     public void Equip()
     {
         grip = null;
-        GameManager.Instance.Drop_UI_Aimation();
+        Game_UI_Manager.Instance.Drop_UI_Aimation();
     }
 
     public void UnEquip(Item item)
@@ -34,15 +49,15 @@ public class NewInventory
         {
             grip = Inven[slotIndex-1];
             Inven[slotIndex - 1] = null;
-            GameManager.Instance.Print_Player_Grip_Ainimation();
-            GameManager.Instance.Print_Player_InvenSlot_Up_Animation(slotIndex);
+            Game_UI_Manager.Instance.Print_Player_Grip_Ainimation();
+            Game_UI_Manager.Instance.Print_Player_InvenSlot_Up_Animation(slotIndex);
         }
         else if (Inven[slotIndex - 1] == null && grip != null)
         {
             Inven[slotIndex-1] = grip;
             grip = null;
-            GameManager.Instance.Drop_UI_Aimation();
-            GameManager.Instance.Print_Player_InvenSlot_Up_Animation(slotIndex);
+            Game_UI_Manager.Instance.Drop_UI_Aimation();
+            Game_UI_Manager.Instance.Print_Player_InvenSlot_Up_Animation(slotIndex);
         }        
     }
 
@@ -53,11 +68,11 @@ public class NewInventory
         {
             if (item != null)
             {
-                GameManager.Instance.Print_Player_InvenSlot(item, index);
+                Game_UI_Manager.Instance.Print_Player_InvenSlot(item, index);
             }
             else
             {
-                GameManager.Instance.Print_Player_InvenSlot(index);
+                Game_UI_Manager.Instance.Print_Player_InvenSlot(index);
             }
             index++;
         }
@@ -76,6 +91,32 @@ public class NewInventory
         if(grip != null)
         {
             grip.bulletCount = 15;
+        }
+    }
+
+    public void Load_Grip(int gripBullet)
+    {
+        this.grip = new Item();
+        if(gripBullet > 0)
+            this.grip.bulletCount = gripBullet;
+        else
+            this.grip = null;
+    }
+
+    public void Load_Inven(int[] invenBullet)
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            Inven[i] = new Item();
+
+            if (invenBullet[i] == -1)
+            {
+                Inven[i] = null;
+            }
+            else
+            {
+                Inven[i].bulletCount = invenBullet[i];
+            }
         }
     }
 }

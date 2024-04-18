@@ -48,7 +48,7 @@ public class Monster_Spawner : MonoBehaviour
 
        for (int i = 0; i < 10; i++)
        {
-            Monster monster = CreateMonster().GetComponent<Monster>();
+            Monster_LongRange monster = CreateMonster().GetComponent<Monster_LongRange>();
             monster._pool.Release(monster.gameObject);
        }
     }
@@ -57,9 +57,12 @@ public class Monster_Spawner : MonoBehaviour
     {
         if (ReleaseCount > 0f && GameManager.Instance.GetPlayer.GetComponent<Player_Controller>().isWaveStart)
         {
-            if (Time.time - spawnTime > Random.Range(3f, 7f))
+            if (Time.time - spawnTime > Random.Range(5f, 10f))
             {
-                MonsterRespawn();
+                for(int i = 0; i< Random.Range(1f, 4f); i++)
+                {
+                    MonsterRespawn();
+                }
             }
         }        
     }
@@ -90,7 +93,7 @@ public class Monster_Spawner : MonoBehaviour
         }        
 
         var newMonster = instance.MonsterPool.Get();
-        newMonster.GetComponent<Monster>().SetMonster(12, 30, false);
+        newMonster.GetComponent<Monster_LongRange>().SetMonster(12, 30, false);
         newMonster.transform.position = spwanPoint;
     }
     
@@ -99,7 +102,7 @@ public class Monster_Spawner : MonoBehaviour
     {
         ReleaseCount--;
         GameObject monster = Instantiate(monsterPrefab);
-        monster.GetComponent<Monster>()._pool = this.MonsterPool;
+        monster.GetComponent<Monster_LongRange>()._pool = this.MonsterPool;
         return monster;
     }
 

@@ -1,16 +1,19 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Interactions;
 using UnityEngine.Pool;
+using UnityEngine.SceneManagement;
 using static UnityEditor.Experimental.GraphView.GraphView;
 using static UnityEngine.GraphicsBuffer;
 using static UnityEngine.Rendering.DebugUI;
 
 public enum PlayerState 
 {
+    None,
     Idle,
     Crouch,
    // NormalAiming,
@@ -34,11 +37,12 @@ public class Player_Controller : MonoBehaviour
     private Transform ArmsTransform;
 
     private Vector2 InputMoveDir;
-    public float MoveSpeed = 10f;
-    public float MaxSpeed = 4f;
+    [SerializeField] private float MoveSpeed = 10f;
+    [SerializeField] private float MaxSpeed = 4f;
 
     [SerializeField] private float CrouchHeiht = 0.7f;
-    //private bool isContactCover = false;
+   
+    public bool isContactCover {  get; private set; }
     private LayerMask Cover;
     private Vector2 normalArmPos;
 
@@ -50,8 +54,11 @@ public class Player_Controller : MonoBehaviour
     private bool isLegAiming;
     private bool isLightAiming;
 
-    public LayerMask layer;
-    public Monster Monster_target {  get; private set; }
+    private bool isRunning;
+    private bool isForward;
+
+    private LayerMask layer;
+    public Monster_LongRange Monster_target {  get; private set; }
     public MyLight Lights_target { get; private set; }
 
     public PlayerState state {  get; set; }
@@ -60,8 +67,8 @@ public class Player_Controller : MonoBehaviour
 
     private float lastAttackTime = 0f;
 
-    public NewInventory playerInventory {  get; private set; }
-    private Gun playerGun;
+    public NewInventory playerInventory; //{  get; private set; }
+    public Gun playerGun {  get; private set; }
 
     [SerializeField]
     private float Damage = 5;
@@ -82,37 +89,101 @@ public class Player_Controller : MonoBehaviour
 
     public bool isContectDepot = false;
 
-    private void Start()
+    public bool isBleeding { get; private set; }
+
+    public bool isGunMalfunction {get; private set; } 
+    public bool isCheckingBullet {  get; private set; }
+
+    private void Awake()
     {
-        playerRigid = GetComponent<Rigidbody2D>();
-        capsuleCollider = transform.GetChild(1).GetChild(0).GetComponent<CapsuleCollider2D>();
-        bodyAnimator = transform.GetChild(0).GetComponent<Animator>();
-        RightArmAimator = transform.GetChild(0).GetChild(0).GetChild(0).GetComponent<Animator>();
-        LeftArmAimator = transform.GetChild(0).GetChild(0).GetChild(1).GetComponent<Animator>();
-        ArmsTransform = transform.GetChild(0).GetChild(0).transform;
-        state = PlayerState.Idle;
         playerInventory = new NewInventory();
         playerGun = new Gun();
 
-        condition = 100;
-        focus = 100;
+        isBleeding = false;
+    }
+
+    private void Start()
+    {
+        if(transform.CompareTag("Player")) 
+        {
+            playerRigid = GetComponent<Rigidbody2D>();
+            capsuleCollider = transform.GetChild(1).GetChild(0).GetComponent<CapsuleCollider2D>();
+            bodyAnimator = transform.GetChild(0).GetComponent<Animator>();
+            RightArmAimator = transform.GetChild(0).GetChild(0).GetChild(0).GetComponent<Animator>();
+            LeftArmAimator = transform.GetChild(0).GetChild(0).GetChild(1).GetComponent<Animator>();
+            ArmsTransform = transform.GetChild(0).GetChild(0).transform;
+            state = PlayerState.Idle;
+
+            Game_UI_Manager.Instance.Init_Player_Grip();
+            Game_UI_Manager.Instance.Init_Player_Inven();
+        }       
 
         isBattle = false;
         isLightUnder = false;
         isWaveStart = false;
+        isContactCover = false;
 
         layer = 64;
         Cover = 4096;
         EvasionPer = 10;
         isEvasionPer_change = false;
 
-        GameManager.Instance.Init_Player_Grip();
-        GameManager.Instance.Init_Player_Inven();
-    }
+        isForward = true;
+
+        if (!GameManager.Instance.isSaveGame)
+        {
+            //인벤토리와 grip null로 초기화
+            playerInventory.NewGame_Init_Inventory();
+
+            condition = 100;
+            focus = 100;
+        }
+    }    
         
     public void OnMove(InputAction.CallbackContext context)
     {
         InputMoveDir = context.ReadValue<Vector2>();
+
+        if (context.performed)
+        {
+            if (context.interaction is MultiTapInteraction)
+            {
+                if (!isRunning && isForward)
+                {
+                    StartCoroutine(Running());
+                }
+            }
+        }
+        
+    }
+
+    private IEnumerator Running()
+    {
+        if (!isRunning)
+        {
+            isRunning = true;
+            bodyAnimator.SetBool("Running", true);
+            yield return new WaitForSeconds(1f);
+            bodyAnimator.SetBool("Running", false);
+
+            yield return new WaitForSeconds(1f);
+            isRunning = false;
+            yield break;
+        }
+    }
+
+    private void Run()
+    {
+        if (isRunning)
+        {
+            MaxSpeed = 6f;
+            MoveSpeed = 15f;
+        }
+        else
+        {
+            MaxSpeed = 4f;
+            MoveSpeed = 10f;
+        }
     }
 
     public void OnCrouch(InputAction.CallbackContext context)
@@ -121,6 +192,7 @@ public class Player_Controller : MonoBehaviour
         if (bodyAnimator.GetBool("PickUp")) return;
         if (context.performed)
         {
+            if (isBleeding) isBleeding = false;            
             Crouch();
         }
     }
@@ -130,7 +202,6 @@ public class Player_Controller : MonoBehaviour
         if (state == PlayerState.Die) return;
         if (context.performed)
         {
-            //state = PlayerState.NormalAiming;
             RightArmAimator.SetBool("Aiming", true);
             LeftArmAimator.SetBool("Aiming", true);
 
@@ -216,9 +287,14 @@ public class Player_Controller : MonoBehaviour
         {
             if (state == PlayerState.PickUping || state == PlayerState.Die || state == PlayerState.Attack || state == PlayerState.Hurt) return;
             if (!playerGun.equipedBullet) return;
+            if (isGunMalfunction) return;
 
             isBattle = true;
             isWaveStart = true;
+
+            isRunning = false;
+            bodyAnimator.SetBool("Running", false);
+
             lastAttackTime = Time.time;
 
             state = PlayerState.Attack;
@@ -257,6 +333,9 @@ public class Player_Controller : MonoBehaviour
             
 
             focus = Mathf.Clamp(focus, 0f, 100f);
+
+            isGunMalfunction = Random.Range(0f, 100f) < 30f? true: false;
+            Game_UI_Manager.Instance.BackSlide_Animation(isGunMalfunction, playerGun.equipedBullet);
         }        
     }    
     
@@ -268,13 +347,8 @@ public class Player_Controller : MonoBehaviour
     public void OnCheckedEquipedBullet(InputAction.CallbackContext context)
     {
         if (state == PlayerState.Hurt || state == PlayerState.Die || state == PlayerState.Attack) return;
-        if (context.performed)
-        {
-            if(context.interaction is HoldInteraction)
-            {
-                Debug.Log(playerGun.equipedBullet);
-            }
-        }
+        if (state == PlayerState.BackSlide) return;
+            isCheckingBullet = context.ReadValue<float>() > 0f;             
     }
 
     public void OnChangeItemSlot(InputAction.CallbackContext context)
@@ -306,7 +380,7 @@ public class Player_Controller : MonoBehaviour
         {
             if (playerInventory.grip == null) return;
             if (playerGun.equipedMagazine != null) return;
-            GameManager.Instance.Drop_UI_Aimation();
+            Game_UI_Manager.Instance.Drop_UI_Aimation();
             playerGun.Equip(playerInventory.grip);
             playerInventory.Equip();
             LeftArmAimator.SetBool("Equip", true);
@@ -362,7 +436,7 @@ public class Player_Controller : MonoBehaviour
                 if (playerGun.equipedMagazine == null) return;
                 playerInventory.UnEquip(playerGun.equipedMagazine);
                 playerGun.UnEquip();
-                GameManager.Instance.Print_Player_Grip_Ainimation();
+                Game_UI_Manager.Instance.Print_Player_Grip_Ainimation();
             }
         }
 
@@ -402,7 +476,7 @@ public class Player_Controller : MonoBehaviour
                     PickUpItemObject.GetComponent<Magazine>().DestoryMagazine();
 
                     bodyAnimator.SetTrigger("PickUping");
-                    GameManager.Instance.Print_Player_Grip_Ainimation();
+                    //Game_UI_Manager.Instance.Print_Player_Grip_Ainimation();
 
                     state = PlayerState.Idle;
                 }else if(context.interaction is PressInteraction)
@@ -473,11 +547,18 @@ public class Player_Controller : MonoBehaviour
         {
             if (playerInventory.grip != null) return;
 
-            if(playerGun.equipedMagazine != null)
+            if (isGunMalfunction)
+            {
+                isGunMalfunction = false;
+            }
+
+            Game_UI_Manager.Instance.BackSlide_Animation(isGunMalfunction, playerGun.equipedBullet);
+
+            if (playerGun.equipedMagazine != null)
             {
                 playerGun.BackSlide();
-            }
-            
+            }            
+
             LeftArmAimator.SetTrigger("BackSlide");
             RightArmAimator.SetTrigger("BackSlide");            
         }
@@ -550,9 +631,11 @@ public class Player_Controller : MonoBehaviour
     {
         if(PlayerRotation.x * playerRigid.velocity.x > 0f)
         {
+            isForward = true;
             bodyAnimator.SetBool("Forward", true);
         }else if (PlayerRotation.x * playerRigid.velocity.x < 0f)
         {
+            isForward = false;
             bodyAnimator.SetBool("Forward", false);
         }
     }
@@ -561,10 +644,29 @@ public class Player_Controller : MonoBehaviour
     {
         if (state == PlayerState.Die || bodyAnimator.GetBool("PickUp") || state == PlayerState.PickUping || bodyAnimator.GetBool("Crouch")) return;
         if (InputMoveDir.x != 0 && playerRigid.velocity.x < MaxSpeed && playerRigid.velocity.x > -MaxSpeed)
-        {
+        {            
             playerRigid.AddForce(Vector2.right * InputMoveDir.x * MoveSpeed);
             bodyAnimator.SetBool("Move", true);
+            //Move_Requirement();            
         }
+    }
+
+    private void Move_Requirement()
+    {
+        Vector3 worldpos = Camera.main.WorldToViewportPoint(this.transform.position);
+        if(worldpos.x < 0f)
+        {
+            worldpos.x = 0f;
+            playerRigid.velocity = Vector2.zero;
+            bodyAnimator.SetBool("Move", false);
+        }
+        else if (worldpos.x > 1f)
+        {
+            worldpos.x = 1f;
+            playerRigid.velocity = Vector2.zero;
+            bodyAnimator.SetBool("Move", false);
+        }
+            this.transform.position = Camera.main.ViewportToWorldPoint(worldpos);
     }
 
     private void Decide_Aiming_Target_Layer()
@@ -583,6 +685,7 @@ public class Player_Controller : MonoBehaviour
     {
         if (Monster_target != null)
         {
+            Game_UI_Manager.Instance.Default_MonsterAiming_Color();
             Monster_target.SetTargeted();
             Monster_target = null;
         }
@@ -627,15 +730,18 @@ public class Player_Controller : MonoBehaviour
     {
         if (Lights_target != null)
         {
+            Game_UI_Manager.Instance.Default_LightAiming_Color();
             Lights_target.OffTargeting();
             Lights_target = null;
         }
         if (hit.Length != 0)
         {
+            Game_UI_Manager.Instance.Change_MonsterAiming_Color();
+
             float closetDistance = float.MaxValue;
             foreach (var hit2 in hit)
             {
-                Monster targets = hit2.transform.GetComponent<Monster>();
+                Monster_LongRange targets = hit2.transform.GetComponent<Monster_LongRange>();
 
                 if (targets != null)
                 {
@@ -688,13 +794,13 @@ public class Player_Controller : MonoBehaviour
     {
         if(playerInventory.grip != null)        
         {
-            GameManager.Instance.Print_Player_Grip(playerInventory.grip);           
+            Game_UI_Manager.Instance.Print_Player_Grip(playerInventory.grip);           
         }
     }
 
     public void Hurt(float ATKdamage, Transform attackMonster)
     {
-        if (state == PlayerState.Die) return;
+        if (condition <= 0f) return;
         if(Random.Range(0,100f)  >= EvasionPer) 
         {
             if(bodyAnimator.GetBool("Crouch"))
@@ -707,13 +813,19 @@ public class Player_Controller : MonoBehaviour
 
             state = PlayerState.Hurt;
             playerRigid.velocity = Vector3.zero;
+
+            isRunning = false;
+            bodyAnimator.SetBool("Running", false);
+
             if (PlayerRotation.x * (transform.position.x - attackMonster.position.x) > 0f)
             {
                 condition = 0;
             }
             else
             {
-                condition -= ATKdamage;                
+                condition -= ATKdamage;
+                isBleeding = true;
+                StartCoroutine(Bleeding());
             }
 
             if (condition <= 0)
@@ -724,15 +836,46 @@ public class Player_Controller : MonoBehaviour
         }        
     }
 
+    private IEnumerator Bleeding()
+    {
+        while (isBleeding)
+        {
+            // 주기적으로 피해를 입히는 간격(예: 1초)을 기다립니다.
+            yield return new WaitForSeconds(1f);
+
+            // 피해를 입히는 부분
+            condition -= 5f;
+
+            if (condition <= 0) Dead();
+            if (state == PlayerState.Die) yield break;
+        }
+
+        yield break;
+    }
+
     private void Dead()
     {
+        isWaveStart = false;
         state = PlayerState.Die;
         playerRigid.velocity = Vector3.zero;
         
         //사망 애니메이션 실행
         bodyAnimator.SetTrigger("Dead");
 
-        //1.5초 후에 게임 오버 씬 출력
+        //1.5초 후에 해당 라운드 재시작
+        StartCoroutine(GameOver());
+    }
+
+    private IEnumerator GameOver()
+    {
+        yield return new WaitForSeconds(1.5f);
+
+        GameManager.Instance.GameLoad();
+        if (GameManager.Instance.SaveSceneName != null)
+            Loading_Bar_Controller.LoadScene(GameManager.Instance.SaveSceneName);
+        else
+            Loading_Bar_Controller.LoadScene(SceneManager.GetActiveScene().name);
+        yield break;
     }
 
     private void EvasionPer_Up(float value)
@@ -756,9 +899,11 @@ public class Player_Controller : MonoBehaviour
 
     private void FixedUpdate()
     {
-        Move();
+        if (state == PlayerState.None) return;        
+        Move();        
         SpriteRotate();
         SpriteMove();
+        Run();
         //Decide_Target();
 
         Decide_Target();
@@ -767,10 +912,12 @@ public class Player_Controller : MonoBehaviour
         AttackDamageDecide();
         PickUpAimation();
 
-        PrintSlots();
+        //PrintSlots();
 
         playerInventory.Print_Inventory_Slot();
         BattleModeEnd();
+
+        CheckBullet();
     }
 
     private void ContactCover()
@@ -778,8 +925,7 @@ public class Player_Controller : MonoBehaviour
         RaycastHit2D hit = Physics2D.Raycast(transform.position + new Vector3(0, 0.1f, 0), PlayerRotation, 2.5f, Cover);
         if(hit.transform != null)
         {
-            Debug.Log("엄폐물 발견");
-            //isContactCover = true;
+            isContactCover = true;
             if (state == PlayerState.Crouch)
             {
                 if(hit.transform.position.x - transform.position.x > 0f)
@@ -793,6 +939,10 @@ public class Player_Controller : MonoBehaviour
                 
             }
         }
+        else
+        {
+            isContactCover = false;
+        }
     }       
     
     public void ReCharge_Inventory_Magazine()
@@ -802,7 +952,7 @@ public class Player_Controller : MonoBehaviour
             playerInventory.RechargeAll();
             for(int i  = 1; i < 5; i++)
             {
-                GameManager.Instance.Print_Player_InvenSlot_Up_Animation(i);
+                Game_UI_Manager.Instance.Print_Player_InvenSlot_Up_Animation(i);
             }            
         }
     }
@@ -835,6 +985,7 @@ public class Player_Controller : MonoBehaviour
         if (collision.CompareTag("Magazine"))
         {
             PickUpItemObject = collision.transform.parent.gameObject;
+            Game_UI_Manager.Instance.isContactMagazine = true;
         }
 
         if (collision.gameObject.layer == 10)
@@ -849,12 +1000,36 @@ public class Player_Controller : MonoBehaviour
         if (collision.CompareTag("Magazine"))
         {
             PickUpItemObject = null;
+            Game_UI_Manager.Instance.isContactMagazine = false;
         }
 
         if(collision.gameObject.layer == 10)
         {
             isLightUnder = false;
             EvasionPer_Up(40);
+        }
+    }
+
+    public void LoadData(float Condition, int gripBullet, int[] inven_Bullet, int EquipedMagazine, bool EquipedBullet)
+    {
+        this.condition = Condition;       
+
+        playerInventory.Load_Grip(gripBullet);
+
+        playerInventory.Load_Inven(inven_Bullet);
+
+        playerGun.Load_Gun(EquipedMagazine, EquipedBullet);
+    }  
+
+    private void CheckBullet()
+    {
+        if (isCheckingBullet)
+        {
+            Game_UI_Manager.Instance.Check_EquipedBullet_Animation(playerGun.equipedBullet);
+        }
+        else
+        {
+            Game_UI_Manager.Instance.End_Check_EquipedBullet_Animation();
         }
     }
 }
