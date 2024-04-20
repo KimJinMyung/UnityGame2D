@@ -10,7 +10,7 @@ public class ObjectPoolManager : MonoBehaviour
     [SerializeField]
     private GameObject magazinePrefab;
 
-    public IObjectPool<GameObject> pool;
+    public IObjectPool<GameObject> pool;    //stack ±â¹Ý
 
     private void Awake()
     {

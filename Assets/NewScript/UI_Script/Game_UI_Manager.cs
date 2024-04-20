@@ -1,7 +1,8 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
-using UnityEditor.Build;
+//using UnityEditor.Build;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.UI;
@@ -63,6 +64,7 @@ public class Game_UI_Manager : singleTone<Game_UI_Manager>
     private TMP_Text BackSlideText;
     private TMP_Text LegAiming;
     private TMP_Text LightAiming;
+    private TMP_Text DashText;
 
     private Color Activecolor;
     private Color Unactivecolor;
@@ -93,6 +95,7 @@ public class Game_UI_Manager : singleTone<Game_UI_Manager>
         BackSlideText = Turotial_Text.transform.GetChild(8).GetChild(0).GetComponent<TMP_Text>();
         LegAiming = Turotial_Text.transform.GetChild(9).GetChild(0).GetComponent<TMP_Text>();
         LightAiming = Turotial_Text.transform.GetChild(10).GetChild(0).GetComponent<TMP_Text>();
+        DashText = Turotial_Text.transform.GetChild(11).GetChild(0).GetComponent<TMP_Text>();
 
         Gun_Animation = Gun_UI.GetComponent<Animator>();
 
@@ -124,6 +127,18 @@ public class Game_UI_Manager : singleTone<Game_UI_Manager>
 
         //if(player.playerInventory.grip != null)
         //    Print_Player_Grip_Ainimation();
+    }
+
+    private void Change_DashText_Text()
+    {
+        if (GameManager.Instance.GetPlayer.GetComponent<Player_Controller>().isDashing)
+        {
+            DashText.color = Unactivecolor;
+        }
+        else
+        {
+            DashText.color = Color.white;
+        }
     }
 
     private void Change_AttackText_Color()
@@ -211,6 +226,10 @@ public class Game_UI_Manager : singleTone<Game_UI_Manager>
         {
             PickUp_Text.text = "탄창 줍기 : ";
             PickUp_Text.color = Activecolor;
+        }else if (player.isContectDepot && Array.Exists(player.playerInventory.Inven, item => item != null))
+        {           
+            PickUp_Text.text = "탄알 충전 : ";
+            PickUp_Text.color = Activecolor;
         }
         else
         {
@@ -235,6 +254,7 @@ public class Game_UI_Manager : singleTone<Game_UI_Manager>
         ChangeEqiupText();
         ChangeUnEquipText();
         ChangeBackSlideText();
+        Change_DashText_Text();
 
         if (player.playerInventory.grip != null)
         {
@@ -245,8 +265,6 @@ public class Game_UI_Manager : singleTone<Game_UI_Manager>
             Drop_UI_Aimation();
         }
     }
-
-    //약실 확인 구현할 것.
 
     private void ChangeBackSlideText()
     {
@@ -372,6 +390,8 @@ public class Game_UI_Manager : singleTone<Game_UI_Manager>
 
     public void Print_Player_Grip(Item item)
     {
+        Grip_BulletGauge_Bar.gameObject.SetActive(true);
+
         if (item.bulletCount <= 0)
         {
             Grip_Magazine_Img.sprite = Print_Magazine_Img_Empty;
@@ -383,6 +403,11 @@ public class Game_UI_Manager : singleTone<Game_UI_Manager>
             float bulletCountPer = (float)item.bulletCount / 15f;
             Grip_BulletGauge_Bar.fillAmount = bulletCountPer;
         }
+    }
+
+    public void Print_Player_Grip()
+    {
+        Grip_BulletGauge_Bar.gameObject.SetActive(false);
     }
 
     public void Print_Player_InvenSlot(int index)
@@ -461,7 +486,6 @@ public class Game_UI_Manager : singleTone<Game_UI_Manager>
         }
         else
         {
-            Debug.Log("일시 정지");
             //일시 정지
             Time.timeScale = 0;
             isSubMenuPressed = true;

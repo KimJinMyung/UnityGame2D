@@ -23,6 +23,8 @@ public class MyCamera : MonoBehaviour
     {
         camSize = 4.5f;
         cam = GetComponent<Camera>();
+
+        //transform.position = GameManager.Instance.GetPlayer.transform.position;
     }
 
     private void Start()

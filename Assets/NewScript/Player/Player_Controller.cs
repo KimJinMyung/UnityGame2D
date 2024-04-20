@@ -7,9 +7,10 @@ using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.Interactions;
 using UnityEngine.Pool;
 using UnityEngine.SceneManagement;
-using static UnityEditor.Experimental.GraphView.GraphView;
-using static UnityEngine.GraphicsBuffer;
-using static UnityEngine.Rendering.DebugUI;
+using UnityEngine.UIElements.Experimental;
+//using static UnityEditor.Experimental.GraphView.GraphView;
+//using static UnityEngine.GraphicsBuffer;
+//using static UnityEngine.Rendering.DebugUI;
 
 public enum PlayerState 
 {
@@ -37,8 +38,8 @@ public class Player_Controller : MonoBehaviour
     private Transform ArmsTransform;
 
     private Vector2 InputMoveDir;
-    [SerializeField] private float MoveSpeed = 10f;
-    [SerializeField] private float MaxSpeed = 4f;
+    [SerializeField] public float MoveSpeed {  get; private set; }
+    [SerializeField] public float MaxSpeed { get; private set; }
 
     [SerializeField] private float CrouchHeiht = 0.7f;
    
@@ -56,14 +57,20 @@ public class Player_Controller : MonoBehaviour
 
     private bool isRunning;
     private bool isForward;
+    public bool isDashing {  get; private set; }
+
+    private bool isInvincibility;   //대시 무적
+
+    [SerializeField]
+    private float DashPower = 800.0f;
 
     private LayerMask layer;
-    public Monster_LongRange Monster_target {  get; private set; }
+    public /*Monster_LongRange*/Monster Monster_target {  get; private set; }
     public MyLight Lights_target { get; private set; }
 
     public PlayerState state {  get; set; }
     private bool isBattle;
-    public bool isWaveStart;
+    public bool isWaveStart;    // 몬스터 웨이브 시작.
 
     private float lastAttackTime = 0f;
 
@@ -84,27 +91,32 @@ public class Player_Controller : MonoBehaviour
     private GameObject PickUpItemObject;
 
     public bool isLightUnder {  get; private set; }
+
     private float EvasionPer;
+
     private bool isEvasionPer_change = false;
 
     public bool isContectDepot = false;
 
     public bool isBleeding { get; private set; }
 
-    public bool isGunMalfunction {get; private set; } 
+    public bool isGunMalfunction {get; private set; } //총기 고장
     public bool isCheckingBullet {  get; private set; }
 
     private void Awake()
     {
-        playerInventory = new NewInventory();
-        playerGun = new Gun();
+        if(playerInventory == null)
+        {
+            playerInventory = new NewInventory();
+        }
+        if(playerGun == null)
+        {
+            playerGun = new Gun();
+        }       
 
         isBleeding = false;
-    }
 
-    private void Start()
-    {
-        if(transform.CompareTag("Player")) 
+        if (transform.CompareTag("Player"))
         {
             playerRigid = GetComponent<Rigidbody2D>();
             capsuleCollider = transform.GetChild(1).GetChild(0).GetComponent<CapsuleCollider2D>();
@@ -116,7 +128,7 @@ public class Player_Controller : MonoBehaviour
 
             Game_UI_Manager.Instance.Init_Player_Grip();
             Game_UI_Manager.Instance.Init_Player_Inven();
-        }       
+        }
 
         isBattle = false;
         isLightUnder = false;
@@ -138,8 +150,13 @@ public class Player_Controller : MonoBehaviour
             condition = 100;
             focus = 100;
         }
-    }    
-        
+    }
+
+    private void OnEnable()
+    {
+        isDashing = false;        
+    }
+
     public void OnMove(InputAction.CallbackContext context)
     {
         InputMoveDir = context.ReadValue<Vector2>();
@@ -148,13 +165,13 @@ public class Player_Controller : MonoBehaviour
         {
             if (context.interaction is MultiTapInteraction)
             {
+                if (isInvincibility) return;
                 if (!isRunning && isForward)
                 {
                     StartCoroutine(Running());
                 }
             }
-        }
-        
+        }        
     }
 
     private IEnumerator Running()
@@ -183,11 +200,12 @@ public class Player_Controller : MonoBehaviour
         {
             MaxSpeed = 4f;
             MoveSpeed = 10f;
-        }
+        }        
     }
 
     public void OnCrouch(InputAction.CallbackContext context)
     {
+        if (isInvincibility) return;
         if (state == PlayerState.Hurt || state == PlayerState.Die) return;
         if (bodyAnimator.GetBool("PickUp")) return;
         if (context.performed)
@@ -211,8 +229,6 @@ public class Player_Controller : MonoBehaviour
 
             InputRotation.Normalize();
             float rotationZ = Mathf.Atan2(InputRotation.y, InputRotation.x) * Mathf.Rad2Deg;
-            //ArmsTransform.rotation = Quaternion.Euler(0f,0f,rotationZ);
-
             
             if (InputRotation.x < 0)
             {
@@ -224,13 +240,10 @@ public class Player_Controller : MonoBehaviour
                 PlayerRotation = Vector2.right;
                 ArmsTransform.localRotation = Quaternion.Euler(0f, 0f, rotationZ);
             }
-
-            //Decide_Target();
         }        
 
         if (context.canceled)
         {
-            //state = PlayerState.Idle;
             RightArmAimator.SetBool("Aiming", false);
             LeftArmAimator.SetBool("Aiming", false);
         }
@@ -285,6 +298,7 @@ public class Player_Controller : MonoBehaviour
 
         if (context.performed)
         {
+            if (isInvincibility) return;
             if (state == PlayerState.PickUping || state == PlayerState.Die || state == PlayerState.Attack || state == PlayerState.Hurt) return;
             if (!playerGun.equipedBullet) return;
             if (isGunMalfunction) return;
@@ -298,23 +312,8 @@ public class Player_Controller : MonoBehaviour
             lastAttackTime = Time.time;
 
             state = PlayerState.Attack;
-
-            //bodyAnimator.SetTrigger("Attack");
             RightArmAimator.SetTrigger("Attack");
             LeftArmAimator.SetTrigger("Attack");
-            //bodyAnimator.SetBool("Attack", true);
-            //RightArmAimator.SetBool("Attack", true);
-            //LeftArmAimator.SetBool("Attack", true);
-            //
-
-            //if (target != null)
-            //{
-            //    target.Hurt(AttackDamage);
-            //    Debug.Log("공격 ");
-            //}
-
-            //bullet 감소
-            //playerGun.BackSlide();
 
             if(Monster_target != null)
             {
@@ -334,7 +333,7 @@ public class Player_Controller : MonoBehaviour
 
             focus = Mathf.Clamp(focus, 0f, 100f);
 
-            isGunMalfunction = Random.Range(0f, 100f) < 30f? true: false;
+            isGunMalfunction = Random.Range(0f, 100f) < 20f? true: false;   // 20% 확률로 총기 고장
             Game_UI_Manager.Instance.BackSlide_Animation(isGunMalfunction, playerGun.equipedBullet);
         }        
     }    
@@ -356,9 +355,6 @@ public class Player_Controller : MonoBehaviour
         if (state == PlayerState.Die || state == PlayerState.Attack) return;
         if (context.performed)
         {
-            //플레이어 손에 탄창이 있으면 누른 번호의 slot으로 이동
-            //만약 플레이어 손에 탄창이 없고 해당 slot에 탄창이 있으면 가져온다.
-            //둘다 있거나 없으면 실행하지 않는다.
 
             int index = (int)context.ReadValue<float>();
           
@@ -405,10 +401,6 @@ public class Player_Controller : MonoBehaviour
 
         if (context.performed)
         {
-            //손에 탄창이 있으면 해당 탄창을 내려 놓는다.
-            //그러나 총에 탄창이 있는 상황에서 손에 탄창이 있으면 총의 탄창을 분리하고 내려 놓는다.
-            //손에 탄창이 없으면 장착되어 있는 총의 탄창을 손에 쥔다.
-            //손, 총 모두 탄창이 없으면 실행되는 것이 없다.
 
             if (playerInventory.grip != null)
             {
@@ -427,8 +419,6 @@ public class Player_Controller : MonoBehaviour
                         ObjectPoolManager.Instance.Drop(playerInventory.grip, this.gameObject);
                     }                
                     playerInventory.Equip();
-                    //GameManager.Instance.Print_Player_Grip_Ainimation();
-                    //GameManager.Instance.Drop_UI_Aimation();
                 }
             }
             else
@@ -448,10 +438,8 @@ public class Player_Controller : MonoBehaviour
 
     public void OnPickUp(InputAction.CallbackContext context)
     {
+        if (isInvincibility) return;
         if (state == PlayerState.Hurt || state == PlayerState.Die) return;
-        //아래에 총탄이 있으면 3초동안 홀드하여 줍는다.
-        //없으면 잠시 멈춰 땅을 짚고 곧바로 일어선다.
-        //플레이어의 손에 총탄이 있으면 버린다.
         if (context.started)
         {
             if (playerInventory.grip != null)
@@ -515,10 +503,6 @@ public class Player_Controller : MonoBehaviour
             bodyAnimator.SetBool("Crouch", false);
             
         }
-        //else
-        //{
-        //    bodyAnimator.SetBool("PickUp", false);
-        //}
 
         if (playerInventory.grip != null)
         {
@@ -535,6 +519,34 @@ public class Player_Controller : MonoBehaviour
         LeftArmAimator.gameObject.SetActive(true);
         RightArmAimator.gameObject.SetActive(true);
     }
+
+    public void OnDash(InputAction.CallbackContext context)
+    {
+        if (isDashing) return;
+        isDashing = true;
+        isInvincibility = true;
+
+        bodyAnimator.SetTrigger("Dash");
+
+        MaxSpeed = 1000f;
+        playerRigid.AddForce(InputMoveDir * DashPower);
+    }    
+
+    public void DashEnd()
+    {
+        MaxSpeed = 6f;
+        playerRigid.velocity = InputMoveDir * 2f;
+        isInvincibility = false;
+        StartCoroutine(DashCoolTime());
+    }
+
+    private IEnumerator DashCoolTime()
+    {
+        yield return new WaitForSeconds(1.5f);
+        isDashing = false;
+        yield break;
+    }
+
     public void OnBackSlide(InputAction.CallbackContext context)
     {
         if (state == PlayerState.Hurt || state == PlayerState.Die) return;
@@ -623,7 +635,6 @@ public class Player_Controller : MonoBehaviour
         {
             playerRigid.velocity = new Vector2(0, playerRigid.velocity.y);
             bodyAnimator.SetBool("Move", false);
-            //state = PlayerState.Idle;
         }
     }
 
@@ -646,9 +657,15 @@ public class Player_Controller : MonoBehaviour
         if (InputMoveDir.x != 0 && playerRigid.velocity.x < MaxSpeed && playerRigid.velocity.x > -MaxSpeed)
         {            
             playerRigid.AddForce(Vector2.right * InputMoveDir.x * MoveSpeed);
-            bodyAnimator.SetBool("Move", true);
-            //Move_Requirement();            
+            bodyAnimator.SetBool("Move", true);        
         }
+        //Move_Requirement();
+    }
+
+    public void PortalMove(Vector2 Dir)
+    {
+        playerRigid.AddForce(Vector2.right * Dir.x * MoveSpeed);
+        bodyAnimator.SetBool("Move", true);
     }
 
     private void Move_Requirement()
@@ -741,7 +758,7 @@ public class Player_Controller : MonoBehaviour
             float closetDistance = float.MaxValue;
             foreach (var hit2 in hit)
             {
-                Monster_LongRange targets = hit2.transform.GetComponent<Monster_LongRange>();
+                Monster targets = hit2.transform.GetComponent<Monster>();
 
                 if (targets != null)
                 {
@@ -770,7 +787,7 @@ public class Player_Controller : MonoBehaviour
             }
             Monster_target = null;
         }
-    }
+    }    
 
     private void Aiming()
     {
@@ -800,6 +817,7 @@ public class Player_Controller : MonoBehaviour
 
     public void Hurt(float ATKdamage, Transform attackMonster)
     {
+        if (isInvincibility) return;
         if (condition <= 0f) return;
         if(Random.Range(0,100f)  >= EvasionPer) 
         {
@@ -824,8 +842,11 @@ public class Player_Controller : MonoBehaviour
             else
             {
                 condition -= ATKdamage;
-                isBleeding = true;
-                StartCoroutine(Bleeding());
+                if (!isBleeding)
+                {
+                    isBleeding = true;
+                    StartCoroutine(Bleeding());
+                }                
             }
 
             if (condition <= 0)
@@ -856,6 +877,7 @@ public class Player_Controller : MonoBehaviour
     private void Dead()
     {
         isWaveStart = false;
+        isBleeding = false;
         state = PlayerState.Die;
         playerRigid.velocity = Vector3.zero;
         
@@ -898,9 +920,9 @@ public class Player_Controller : MonoBehaviour
     }
 
     private void FixedUpdate()
-    {
+    {       
         if (state == PlayerState.None) return;        
-        Move();        
+        Move();
         SpriteRotate();
         SpriteMove();
         Run();
@@ -913,11 +935,31 @@ public class Player_Controller : MonoBehaviour
         PickUpAimation();
 
         //PrintSlots();
-
+        
         playerInventory.Print_Inventory_Slot();
+        playerInventory.Print_Inventory_Grip();
         BattleModeEnd();
 
         CheckBullet();
+
+
+        //디버깅 모드
+        if (Input.GetKeyDown(KeyCode.K))
+        {
+            if (!isInvincibility)
+            {
+                isInvincibility = true;
+            }
+            else
+            {
+                isInvincibility = false;
+            }
+        }
+
+        if (isInvincibility)
+        {
+            ImagePoolManager.Instance.CreateObject();
+        }
     }
 
     private void ContactCover()
@@ -1012,12 +1054,21 @@ public class Player_Controller : MonoBehaviour
 
     public void LoadData(float Condition, int gripBullet, int[] inven_Bullet, int EquipedMagazine, bool EquipedBullet)
     {
-        this.condition = Condition;       
+        this.condition = Condition;
 
+        this.focus = 100f;
+
+        if(playerInventory == null)
+        {
+            playerInventory = new NewInventory();
+        }
         playerInventory.Load_Grip(gripBullet);
-
         playerInventory.Load_Inven(inven_Bullet);
 
+        if(playerGun == null)
+        {
+            playerGun = new Gun();
+        }
         playerGun.Load_Gun(EquipedMagazine, EquipedBullet);
     }  
 

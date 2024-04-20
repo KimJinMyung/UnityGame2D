@@ -37,11 +37,7 @@ public class AttackTiming : MonoBehaviour
             if(AttackSuccess <=  Accuracy)
             {
                 player.Monster_target.Hurt(player.AttackDamage);
-            }
-            else
-            {
-                Debug.Log("ºø³ª°¨...");
-            }
+            }            
         }
         
         player.AttackBackSlide();
@@ -68,5 +64,5 @@ public class AttackTiming : MonoBehaviour
     private void Update()
     {
         Under_Light_Accuracy();
-    }
+    }    
 }

@@ -61,6 +61,18 @@ public class NewInventory
         }        
     }
 
+    public void Print_Inventory_Grip()
+    {
+        if (grip != null)
+        {
+            Game_UI_Manager.Instance.Print_Player_Grip(grip);
+        }
+        else
+        {
+            Game_UI_Manager.Instance.Print_Player_Grip();
+        }
+    }
+
     public void Print_Inventory_Slot()
     {
         int index = 0;
@@ -96,7 +108,11 @@ public class NewInventory
 
     public void Load_Grip(int gripBullet)
     {
-        this.grip = new Item();
+        if(this.grip == null)
+        {
+            this.grip = new Item();
+        }
+
         if(gripBullet > 0)
             this.grip.bulletCount = gripBullet;
         else

@@ -9,7 +9,7 @@ public class Monster_Spawner : MonoBehaviour
     public static Monster_Spawner instance;
 
     [SerializeField]
-    private GameObject monsterPrefab;
+    private GameObject[] monsterPrefab = new GameObject[2];
     [SerializeField]
     private Transform[] spawnPoints;
 
@@ -37,8 +37,8 @@ public class Monster_Spawner : MonoBehaviour
 
     private void Start()
     {
-        MinPos = new Vector2(-(Ground.transform.localScale.x / 2) + Ground.transform.position.x - 14f, 0);
-        MaxPos = new Vector2((Ground.transform.localScale.x / 2 + Ground.transform.position.x) + 14f, 0);
+        MinPos = new Vector2(-(Ground.transform.localScale.x / 2) + Ground.transform.position.x /*+ Mathf.Abs(Camera.main.transform.GetChild(1).localPosition.x)*/, 0);
+        MaxPos = new Vector2((Ground.transform.localScale.x / 2) + Ground.transform.position.x /*- Mathf.Abs(Camera.main.transform.GetChild(0).localPosition.x)*/,  0);
     }
 
     private void Init()
@@ -48,7 +48,7 @@ public class Monster_Spawner : MonoBehaviour
 
        for (int i = 0; i < 10; i++)
        {
-            Monster_LongRange monster = CreateMonster().GetComponent<Monster_LongRange>();
+            /*Monster_LongRange*/Monster monster = CreateMonster().GetComponent<Monster>();
             monster._pool.Release(monster.gameObject);
        }
     }
@@ -59,7 +59,7 @@ public class Monster_Spawner : MonoBehaviour
         {
             if (Time.time - spawnTime > Random.Range(5f, 10f))
             {
-                for(int i = 0; i< Random.Range(1f, 4f); i++)
+                for(int i = 0; i< Random.Range(1f, 1f); i++)
                 {
                     MonsterRespawn();
                 }
@@ -93,7 +93,15 @@ public class Monster_Spawner : MonoBehaviour
         }        
 
         var newMonster = instance.MonsterPool.Get();
-        newMonster.GetComponent<Monster_LongRange>().SetMonster(12, 30, false);
+
+        if (newMonster.GetComponent<Monster>().Monster_Type_ID == 1)
+        {
+            newMonster.GetComponent<Monster_ShortRange>().SetMonster(12f, 100f, 1.5f, false);
+        }else if(newMonster.GetComponent<Monster>().Monster_Type_ID == 2)
+        {
+            newMonster.GetComponent<Monster_LongRange>().SetMonster(10f, 30f, 5.5f, false);
+        }
+        //newMonster.GetComponent<Monster>().SetMonster(12, 30, 4.5f, false);
         newMonster.transform.position = spwanPoint;
     }
     
@@ -101,8 +109,19 @@ public class Monster_Spawner : MonoBehaviour
     private GameObject CreateMonster()
     {
         ReleaseCount--;
-        GameObject monster = Instantiate(monsterPrefab);
-        monster.GetComponent<Monster_LongRange>()._pool = this.MonsterPool;
+
+        GameObject monster;
+        if (Random.Range(0f,100f) >= 50f)
+        {
+            monster = Instantiate(monsterPrefab[0]);
+            monster.GetComponent<Monster_ShortRange>()._pool = this.MonsterPool;
+        }
+        else
+        {
+            monster = Instantiate(monsterPrefab[1]);            
+            monster.GetComponent<Monster_LongRange>()._pool = this.MonsterPool;
+        }
+        
         return monster;
     }
 

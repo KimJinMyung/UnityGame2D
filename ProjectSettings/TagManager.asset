@@ -6,6 +6,9 @@ TagManager:
   tags:
   - Magazine
   - monster
+  - cover
+  - Bullet_Depot
+  - PlayerData
   layers:
   - Default
   - TransparentFX
@@ -18,8 +21,8 @@ TagManager:
   - item
   - player
   - Light
-  - 
-  - 
+  - LightCollider
+  - Cover
   - 
   - 
   - 
@@ -40,9 +43,18 @@ TagManager:
   - 
   - 
   m_SortingLayers:
+  - name: BackGround
+    uniqueID: 2314976397
+    locked: 0
+  - name: portal
+    uniqueID: 1706190617
+    locked: 0
   - name: Default
     uniqueID: 0
     locked: 0
   - name: item
     uniqueID: 1094485265
+    locked: 0
+  - name: Player
+    uniqueID: 3211026427
     locked: 0

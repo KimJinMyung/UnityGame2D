@@ -49,4 +49,14 @@ public class ArmScripts : MonoBehaviour
     {
         GameManager.Instance.GetPlayer.GetComponent<Player_Controller>().ReCharge_Inventory_Magazine();
     }
+
+    void Dash_End()
+    {
+        GameManager.Instance.GetPlayer.GetComponent<Player_Controller>().DashEnd();
+    }
+
+    void Dash()
+    {
+        transform.parent.GetComponent<Rigidbody2D>().AddForce(Vector2.right * 800f);
+    }
 }
