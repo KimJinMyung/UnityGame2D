@@ -122,18 +122,18 @@ public class GameManager : singleTone1<GameManager>
 
     public void GameLoad()
     {
-        //if (File.Exists(_path) == false)        
-        //{
-        //    int[] Inven_Bullets = new int[4];
+        if (File.Exists(_path) == false)
+        {
+            int[] Inven_Bullets = new int[4];
 
-        //    for (int i = 0; i < 4; i++)
-        //    {
-        //        Inven_Bullets[i] = -1;
-        //    }
+            for (int i = 0; i < 4; i++)
+            {
+                Inven_Bullets[i] = -1;
+            }
 
-        //    player.GetComponent<Player_Controller>().LoadData(100, -1, Inven_Bullets, -1, false);
-        //    return;
-        //}
+            player.GetComponent<Player_Controller>().LoadData(100, -1, Inven_Bullets, -1, false);
+            return;
+        }
 
 
         string file = File.ReadAllText(_path);
