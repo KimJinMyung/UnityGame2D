@@ -1,12 +1,13 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Pool;
 
 public class Monster_Spawner : MonoBehaviour
 {
-    public static Monster_Spawner instance;
+    public static Monster_Spawner instance {  get; private set; }
 
     [SerializeField]
     private GameObject[] monsterPrefab = new GameObject[2];
@@ -17,9 +18,9 @@ public class Monster_Spawner : MonoBehaviour
     private Vector2 MaxPos;
 
     [SerializeField]
-    private GameObject Ground; 
+    private GameObject Ground;
 
-    public IObjectPool<GameObject> MonsterPool;
+    private List<GameObject> monsterList;
 
     private float ReleaseCount=0f;
     private float spawnTime = 0f;
@@ -43,13 +44,17 @@ public class Monster_Spawner : MonoBehaviour
 
     private void Init()
     {
-        MonsterPool = new ObjectPool<GameObject>(CreateMonster, OnGetMonster, OnReleaseMonster, OnDestroyMonster, maxSize: (int)MaxMonsterCount);
+        monsterList = new List<GameObject>();
+
         ReleaseCount = MaxMonsterCount;
 
-       for (int i = 0; i < 10; i++)
+       for (int i = 0; i < MaxMonsterCount; i++)
        {
-            /*Monster_LongRange*/Monster monster = CreateMonster().GetComponent<Monster>();
-            monster._pool.Release(monster.gameObject);
+            ///*Monster_LongRange*/Monster monster = CreateMonster().GetComponent<Monster>();
+            //monster._pool.Release(monster.gameObject);
+
+            Monster newMonster = OnCreate().GetComponent<Monster>();
+            OnRelease(newMonster.gameObject);
        }
     }
 
@@ -64,7 +69,21 @@ public class Monster_Spawner : MonoBehaviour
                     MonsterRespawn();
                 }
             }
-        }        
+        }
+
+        if(ReleaseCount > MaxMonsterCount)
+        {
+            int destroyMonsterIndex = Random.Range(0, monsterList.Count - 1);
+            var destroyMonster = monsterList[destroyMonsterIndex];
+            monsterList.RemoveAt(destroyMonsterIndex);
+            ReleaseCount--;
+        }
+        else if(ReleaseCount < MaxMonsterCount)
+        {
+            Monster newMonster = OnCreate().GetComponent<Monster>();
+            OnRelease(newMonster.gameObject);
+            ReleaseCount++;
+        }
     }
 
     public void MonsterRespawn()
@@ -90,9 +109,10 @@ public class Monster_Spawner : MonoBehaviour
             {
                 spwanPoint = spawnPoints[1].position;
             }
-        }        
+        }
 
-        var newMonster = instance.MonsterPool.Get();
+        //var newMonster = instance.MonsterPool.Get();
+        var newMonster = instance.OnGet();
 
         if (newMonster.GetComponent<Monster>().Monster_Type_ID == 1)
         {
@@ -106,39 +126,73 @@ public class Monster_Spawner : MonoBehaviour
     }
     
 
-    private GameObject CreateMonster()
+    //private GameObject CreateMonster()
+    //{
+    //    ReleaseCount--;
+
+    //    GameObject monster;
+    //    if (Random.Range(0f,100f) >= 50f)
+    //    {
+    //        monster = Instantiate(monsterPrefab[0]);
+    //        //monster.GetComponent<Monster_ShortRange>()._pool = this.MonsterPool;
+    //    }
+    //    else
+    //    {
+    //        monster = Instantiate(monsterPrefab[1]);            
+    //       // monster.GetComponent<Monster_LongRange>()._pool = this.MonsterPool;
+    //    }
+        
+    //    return monster;
+    //}
+
+    //private void OnGetMonster(GameObject monster)
+    //{
+    //    ReleaseCount--;
+    //    monster.SetActive(true);
+    //}
+
+    //private void OnReleaseMonster(GameObject monster)
+    //{
+    //    ReleaseCount++;
+    //    monster.SetActive(false);
+    //}
+
+    //private void OnDestroyMonster(GameObject monster)
+    //{
+    //    Destroy(monster);
+    //}
+
+    private GameObject OnCreate()
     {
         ReleaseCount--;
 
         GameObject monster;
-        if (Random.Range(0f,100f) >= 50f)
+        if (Random.Range(0f, 100f) >= 50f)
         {
-            monster = Instantiate(monsterPrefab[0]);
-            monster.GetComponent<Monster_ShortRange>()._pool = this.MonsterPool;
+            monster = Instantiate(monsterPrefab[0]);           
         }
         else
         {
-            monster = Instantiate(monsterPrefab[1]);            
-            monster.GetComponent<Monster_LongRange>()._pool = this.MonsterPool;
+            monster = Instantiate(monsterPrefab[1]);          
         }
-        
+        OnRelease(monster);
+
         return monster;
     }
 
-    private void OnGetMonster(GameObject monster)
+    public GameObject OnGet()
     {
+        var monster = monsterList[(int)Random.Range(0, ReleaseCount-1)];
+        monsterList.Remove(monster);
         ReleaseCount--;
         monster.SetActive(true);
+        return monster;
     }
 
-    private void OnReleaseMonster(GameObject monster)
+    public void OnRelease(GameObject monster)
     {
-        ReleaseCount++;
         monster.SetActive(false);
-    }
-
-    private void OnDestroyMonster(GameObject monster)
-    {
-        Destroy(monster);
+        monsterList.Add(monster);
+        ReleaseCount++;
     }
 }

@@ -27,10 +27,10 @@ public class Monster_ShortRange : Monster
 
         Monster_Type_ID = 1;
 
-        if (_pool == null)
-        {
-            _pool = Monster_Spawner.instance.MonsterPool;
-        }
+        //if (_pool == null)
+        //{
+        //    _pool = Monster_Spawner.instance.MonsterPool;
+        //}
 
         Target_Player = GameManager.Instance.GetPlayer;
         LayerMask = 512;

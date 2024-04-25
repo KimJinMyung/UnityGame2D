@@ -27,7 +27,7 @@ public abstract class Monster : MonoBehaviour
     protected SpriteRenderer[] Aiming;
     protected bool isBleeding = false;
 
-    public IObjectPool<GameObject> _pool;
+    //public IObjectPool<GameObject> _pool;
 
     protected GameObject Target_Player;
 
@@ -220,7 +220,8 @@ public abstract class Monster : MonoBehaviour
     protected IEnumerator ReleaseMonster()    // 풀링으로 반환
     {
         yield return new WaitForSeconds(5f);
-        _pool.Release(this.gameObject);
+        //_pool.Release(this.gameObject);
+        Monster_Spawner.instance.OnRelease(this.gameObject);
         yield break;
     }
     protected IEnumerator Bleeding()  //출혈

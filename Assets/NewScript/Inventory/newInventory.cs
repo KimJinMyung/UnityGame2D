@@ -45,20 +45,24 @@ public class NewInventory
     
     public void ChangeMagazineSlot(int slotIndex)
     {
-        if (Inven[slotIndex-1]  != null && grip == null)
+        if (Inven[slotIndex - 1] != null && grip == null)
         {
-            grip = Inven[slotIndex-1];
+            grip = Inven[slotIndex - 1];
             Inven[slotIndex - 1] = null;
             Game_UI_Manager.Instance.Print_Player_Grip_Ainimation();
             Game_UI_Manager.Instance.Print_Player_InvenSlot_Up_Animation(slotIndex);
         }
         else if (Inven[slotIndex - 1] == null && grip != null)
         {
-            Inven[slotIndex-1] = grip;
+            Inven[slotIndex - 1] = grip;
             grip = null;
             Game_UI_Manager.Instance.Drop_UI_Aimation();
             Game_UI_Manager.Instance.Print_Player_InvenSlot_Up_Animation(slotIndex);
-        }        
+        }
+        else
+        {
+            Game_UI_Manager.Instance.Print_Player_InvenSlot_Up_Animation(slotIndex);
+        }
     }
 
     public void Print_Inventory_Grip()

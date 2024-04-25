@@ -22,7 +22,7 @@ using static GameManager;
         // Add other variables for inventory and gun status
     }
 
-public class GameManager : singleTone1<GameManager>
+public class GameManager : singleTone<GameManager>
 {
    
 

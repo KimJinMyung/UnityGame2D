@@ -557,7 +557,7 @@ public class Player_Controller : MonoBehaviour
 
         if (context.performed)
         {
-            if (playerInventory.grip != null) return;
+            //if (playerInventory.grip != null) return;
 
             if (isGunMalfunction)
             {

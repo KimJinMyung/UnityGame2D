@@ -365,7 +365,10 @@ public class Game_UI_Manager : singleTone<Game_UI_Manager>
         //입력받은 번호의 인벤토리가 올라왔다가 1초 후에 다시 내려가는 애니메이션
         //UI_Grip_Panel_Aimator.SetTrigger("Up");
         UI_Inven_Panel_Aimator[index - 1].SetTrigger("Up");
-        Inven_Magazine_Img[index - 1].gameObject.SetActive(true);
+        if (player.playerInventory.Inven[index-1] != null)
+        {
+            Inven_Magazine_Img[index - 1].gameObject.SetActive(true);
+        }
         UI_Inven_Aimator[index - 1].SetTrigger("Grip");
 
         //StartCoroutine(Print_Player_InvenSlot_Down_Animation(index));
