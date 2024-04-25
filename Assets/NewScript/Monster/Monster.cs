@@ -321,7 +321,7 @@ public abstract class Monster : MonoBehaviour
         if (GameManager.Instance.GetPlayer.GetComponent<Player_Controller>().state == PlayerState.Die) return;
         if (monster_State == Monster_State.Dead) return;
         RaycastHit2D hit = Physics2D.Raycast(transform.position, RaycastDir, SightRange, LayerMask);
-        Debug.DrawLine(transform.position, (Vector2)transform.position + RaycastDir * SightRange, Color.red);
+        //Debug.DrawLine(transform.position, (Vector2)transform.position + RaycastDir * SightRange, Color.red);
 
         if (hit.transform != null)
         {

@@ -125,7 +125,7 @@ public class Monster_LongRange : Monster
         Vector2 startPoint = (transform.position + new Vector3(0, 0.2f, 0));
         Vector2 RandomAngle = new Vector2(RaycastDir.x, Random.Range(-0.5f, 0.6f));
         RaycastHit2D attackTarget = Physics2D.Raycast(startPoint, RandomAngle, AttackRange, AttackLayerMask);
-        Debug.DrawLine(startPoint, startPoint + RandomAngle * AttackRange, Color.black);       
+        //Debug.DrawLine(startPoint, startPoint + RandomAngle * AttackRange, Color.yellow);       
 
         if (attackTarget.transform != null)
         {

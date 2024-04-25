@@ -8,8 +8,10 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using static GameManager;
+using System.ComponentModel.Design;
+using System.Security.Cryptography;
 
- [System.Serializable]
+[System.Serializable]
     public class SaveData
     {
         public bool isNewGame;
@@ -43,10 +45,11 @@ public class GameManager : singleTone<GameManager>
 
     private string _path;
 
+    private string KeyWord = "asddsghajskfdhjksdaf";
+
     private void Awake()
     {
         _path = Application.persistentDataPath + "/fileName.json";
-
         playerController = player.GetComponent<Player_Controller>();
 
         GameLoad();
@@ -54,7 +57,7 @@ public class GameManager : singleTone<GameManager>
         if (SceneManager.GetActiveScene().name != "Title")
         {
             GameSave();
-        }        
+        }
     }
 
     
@@ -116,7 +119,7 @@ public class GameManager : singleTone<GameManager>
         saveData.PlayerGun_EquipedBullet = player.GetComponent<Player_Controller>().playerGun.equipedBullet;
 
         json = JsonUtility.ToJson(saveData);
-        File.WriteAllText(_path, json);
+        File.WriteAllText(_path, EncryptAndDecrypt(json));
 
     }
 
@@ -134,10 +137,10 @@ public class GameManager : singleTone<GameManager>
             player.GetComponent<Player_Controller>().LoadData(100, -1, Inven_Bullets, -1, false);
             return;
         }
-
+        
 
         string file = File.ReadAllText(_path);
-        SaveData saveDatas = JsonUtility.FromJson<SaveData>(file);
+        SaveData saveDatas = JsonUtility.FromJson<SaveData>(EncryptAndDecrypt(file));
 
         isSaveGame = saveDatas.isNewGame;
         SaveSceneName = saveDatas.stageName;
@@ -182,5 +185,17 @@ public class GameManager : singleTone<GameManager>
         }           
 
         SaveSceneName = null;
+    }
+
+    private string EncryptAndDecrypt(string data)   //¾ÏÈ£È­
+    {
+        string resurt = "";
+
+        for (int i = 0; i<data.Length; i++)
+        {
+            resurt += (char)(data[i] ^ KeyWord[i % KeyWord.Length]);
+        }
+
+        return resurt;
     }
 }

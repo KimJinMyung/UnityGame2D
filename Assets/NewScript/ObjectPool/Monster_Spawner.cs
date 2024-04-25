@@ -26,7 +26,7 @@ public class Monster_Spawner : MonoBehaviour
     private float spawnTime = 0f;
 
     [SerializeField]
-    private float MaxMonsterCount = 5f;
+    private float MaxMonsterCount = 10f;
 
     private void Awake()
     {
@@ -46,14 +46,13 @@ public class Monster_Spawner : MonoBehaviour
     {
         monsterList = new List<GameObject>();
 
-        ReleaseCount = MaxMonsterCount;
-
        for (int i = 0; i < MaxMonsterCount; i++)
        {
             ///*Monster_LongRange*/Monster monster = CreateMonster().GetComponent<Monster>();
             //monster._pool.Release(monster.gameObject);
 
             Monster newMonster = OnCreate().GetComponent<Monster>();
+            monsterList.Add(newMonster.gameObject);
             OnRelease(newMonster.gameObject);
        }
     }
@@ -81,6 +80,7 @@ public class Monster_Spawner : MonoBehaviour
         else if(ReleaseCount < MaxMonsterCount)
         {
             Monster newMonster = OnCreate().GetComponent<Monster>();
+            monsterList.Add(newMonster.gameObject);
             OnRelease(newMonster.gameObject);
             ReleaseCount++;
         }
@@ -183,7 +183,7 @@ public class Monster_Spawner : MonoBehaviour
     public GameObject OnGet()
     {
         var monster = monsterList[(int)Random.Range(0, ReleaseCount-1)];
-        monsterList.Remove(monster);
+        //monsterList.Remove(monster);
         ReleaseCount--;
         monster.SetActive(true);
         return monster;
@@ -192,7 +192,7 @@ public class Monster_Spawner : MonoBehaviour
     public void OnRelease(GameObject monster)
     {
         monster.SetActive(false);
-        monsterList.Add(monster);
+        //monsterList.Add(monster);
         ReleaseCount++;
     }
 }

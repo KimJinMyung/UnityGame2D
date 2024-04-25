@@ -68,6 +68,7 @@ public class Monster_ShortRange : Monster
         Monster_Move();
         Raycast_Dir();
         Look();
+        Debug.DrawLine(transform.position, (Vector2)transform.position + RaycastDir * SightRange, Color.red);
     }
 
     protected override void HitBox_Position()
