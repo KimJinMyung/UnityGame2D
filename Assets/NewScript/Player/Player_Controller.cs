@@ -526,6 +526,11 @@ public class Player_Controller : MonoBehaviour
         isDashing = true;
         isInvincibility = true;
 
+        if(state == PlayerState.Crouch)
+        {
+            state = PlayerState.Idle;
+            bodyAnimator.SetBool("Crouch", false);
+        }
         bodyAnimator.SetTrigger("Dash");
 
         MaxSpeed = 1000f;
@@ -977,8 +982,7 @@ public class Player_Controller : MonoBehaviour
                 else if(hit.transform.position.x - transform.position.x < 0f)
                 {
                     transform.position = this.transform.position - new Vector3(hit.distance - 1.4f, 0f, 0f);
-                }
-                
+                }                
             }
         }
         else
