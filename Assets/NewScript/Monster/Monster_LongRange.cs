@@ -125,11 +125,15 @@ public class Monster_LongRange : Monster
         Vector2 startPoint = (transform.position + new Vector3(0, 0.2f, 0));
         Vector2 RandomAngle = new Vector2(RaycastDir.x, Random.Range(-0.5f, 0.6f));
         RaycastHit2D attackTarget = Physics2D.Raycast(startPoint, RandomAngle, AttackRange, AttackLayerMask);
-        //Debug.DrawLine(startPoint, startPoint + RandomAngle * AttackRange, Color.yellow);       
-
+        Debug.DrawLine(startPoint, startPoint + RandomAngle * AttackRange, Color.yellow);       
+        
         if (attackTarget.transform != null)
         {
-            if (attackTarget.transform.gameObject.layer == 9)
+            if (attackTarget.transform.gameObject.layer == 12 && GameManager.Instance.GetPlayer.GetComponent<Player_Controller>().isContactCover)
+            {
+                target = null;
+            }
+            else if (attackTarget.transform.gameObject.layer == 9)
             {
                 target = attackTarget.transform.gameObject;
             }

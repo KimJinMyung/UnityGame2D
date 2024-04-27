@@ -210,9 +210,12 @@ public abstract class Monster : MonoBehaviour
      
         OffTargeting();
         gameObject.layer = 7;
-        Item item = new Item();
-        item.bulletCount = Random.Range(0, 16);
-        ObjectPoolManager.Instance.Drop(item, this.gameObject);
+        if(Random.Range(0f,100f) < 80f)
+        {
+            Item item = new Item();
+            item.bulletCount = Random.Range(0, 16);
+            ObjectPoolManager.Instance.Drop(item, this.gameObject);
+        }
 
         StartCoroutine(ReleaseMonster());
     }
